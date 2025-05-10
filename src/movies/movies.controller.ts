@@ -56,6 +56,8 @@ export class MoviesController {
     return this.moviesService.update(userId, id, updateMovieDto);
   }
 
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
   @Delete(':id')
   remove(@UserId() userId: string, @Param('id') id: string) {
     return this.moviesService.remove(userId, id);

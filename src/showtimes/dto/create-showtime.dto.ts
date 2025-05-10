@@ -16,6 +16,14 @@ export class CreateShowtimeDto {
   startTime: Date;
 
   /**
+   * Showtime's end time (ISO 8601 format)
+   * @example "2025-05-09T21:30:00Z"
+   */
+  @IsDefined()
+  @IsDate()
+  endTime: Date;
+
+  /**
    * Showtime's price
    * @example 12.5
    */

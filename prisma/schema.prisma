@@ -55,6 +55,7 @@ model Movie {
 model Showtime {
   id           String   @id @default(uuid())
   startTime    DateTime
+  endTime      DateTime
   price        Float
   adminId      String
   movieId      String

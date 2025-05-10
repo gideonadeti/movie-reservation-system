@@ -43,9 +43,15 @@ export class MoviesController {
     return this.moviesService.findOne(id);
   }
 
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateMovieDto: UpdateMovieDto) {
-    return this.moviesService.update(+id, updateMovieDto);
+  update(
+    @UserId() userId: string,
+    @Param('id') id: string,
+    @Body() updateMovieDto: UpdateMovieDto,
+  ) {
+    return this.moviesService.update(userId, id, updateMovieDto);
   }
 
   @Delete(':id')

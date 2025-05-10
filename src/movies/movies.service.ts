@@ -62,8 +62,24 @@ export class MoviesService {
     }
   }
 
-  update(id: number, updateMovieDto: UpdateMovieDto) {
-    return `This action updates a #${id} movie`;
+  async update(userId: string, id: string, updateMovieDto: UpdateMovieDto) {
+    try {
+      const movies = await this.prismaService.movie.updateManyAndReturn({
+        where: {
+          id,
+          adminId: userId,
+        },
+        data: updateMovieDto,
+      });
+
+      if (movies.length === 0) {
+        throw new BadRequestException(`Failed to update movie with id ${id}`);
+      }
+
+      return movies[0];
+    } catch (error) {
+      this.handleError(error, `update movie with id ${id}`);
+    }
   }
 
   remove(id: number) {

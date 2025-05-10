@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   InternalServerErrorException,
@@ -9,6 +10,7 @@ import {
 import { CreateMovieDto } from './dto/create-movie.dto';
 import { UpdateMovieDto } from './dto/update-movie.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { Prisma } from 'generated/prisma';
 
 @Injectable()
 export class MoviesService {
@@ -23,6 +25,11 @@ export class MoviesService {
       throw error;
     } else if (error instanceof ForbiddenException) {
       throw error;
+    } else if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2002'
+    ) {
+      throw new ConflictException('Title is already in use');
     }
 
     throw new InternalServerErrorException(`Failed to ${action}`);

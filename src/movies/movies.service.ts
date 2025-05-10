@@ -76,7 +76,16 @@ export class MoviesService {
     }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} movie`;
+  async remove(userId: string, id: string) {
+    try {
+      return await this.prismaService.movie.delete({
+        where: {
+          id,
+          adminId: userId,
+        },
+      });
+    } catch (error) {
+      this.handleError(error, `delete movie with id ${id}`);
+    }
   }
 }

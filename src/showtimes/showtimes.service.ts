@@ -25,7 +25,7 @@ export class ShowtimesService {
     throw new InternalServerErrorException(`Failed to ${action}`);
   }
   async create(userId: string, createShowtimeDto: CreateShowtimeDto) {
-    const { startTime, endTime } = createShowtimeDto;
+    const { startTime, endTime, auditoriumId } = createShowtimeDto;
 
     if (startTime > endTime) {
       throw new BadRequestException('Start time must be before end time');
@@ -36,6 +36,24 @@ export class ShowtimesService {
     }
 
     try {
+      const overlap = await this.prismaService.showtime.findFirst({
+        where: {
+          auditoriumId: auditoriumId,
+          startTime: {
+            lt: endTime,
+          },
+          endTime: {
+            gt: startTime,
+          },
+        },
+      });
+
+      if (overlap) {
+        throw new BadRequestException(
+          'The auditorium is unavailable during this period',
+        );
+      }
+
       return await this.prismaService.showtime.create({
         data: { ...createShowtimeDto, adminId: userId },
       });

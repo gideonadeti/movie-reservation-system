@@ -47,5 +47,39 @@ model Movie {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  admin User @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  admin     User       @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  showtimes Showtime[]
+}
+
+model Showtime {
+  id           String   @id @default(uuid())
+  startTime    DateTime
+  price        Float
+  movieId      String
+  auditoriumId String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  movie      Movie      @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  auditorium Auditorium @relation(fields: [auditoriumId], references: [id], onDelete: Cascade)
+}
+
+model Auditorium {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  seats     Seat[]
+  showtimes Showtime[]
+}
+
+model Seat {
+  id           String   @id @default(uuid())
+  label        String
+  auditoriumId String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  auditorium Auditorium @relation(fields: [auditoriumId], references: [id], onDelete: Cascade)
 }

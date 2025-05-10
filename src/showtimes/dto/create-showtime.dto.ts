@@ -1,5 +1,5 @@
 import {
-  IsDateString,
+  IsDate,
   IsDefined,
   IsNumber,
   IsPositive,
@@ -12,7 +12,7 @@ export class CreateShowtimeDto {
    * @example "2025-05-09T19:30:00Z"
    */
   @IsDefined()
-  @IsDateString()
+  @IsDate()
   startTime: Date;
 
   /**

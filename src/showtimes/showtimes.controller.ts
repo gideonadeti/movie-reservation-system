@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 
 import { ShowtimesService } from './showtimes.service';
@@ -18,6 +19,7 @@ import { RolesGuard } from 'src/roles/roles.guard';
 import { Roles } from 'src/roles/roles.decorator';
 import { Role } from 'generated/prisma';
 import { UserId } from 'src/user-id/user-id.decorator';
+import { FindAllShowtimesDto } from './dto/find-all-showtimes.dto';
 
 @ApiTags('Showtimes')
 @ApiBearerAuth()
@@ -37,8 +39,8 @@ export class ShowtimesController {
   }
 
   @Get()
-  findAll() {
-    return this.showtimesService.findAll();
+  findAll(@Query() query: FindAllShowtimesDto) {
+    return this.showtimesService.findAll(query);
   }
 
   @Get(':id')

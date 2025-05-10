@@ -62,8 +62,12 @@ export class ShowtimesService {
     }
   }
 
-  findAll() {
-    return `This action returns all showtimes`;
+  async findAll() {
+    try {
+      return await this.prismaService.showtime.findMany();
+    } catch (error) {
+      this.handleError(error, 'fetch all showtimes');
+    }
   }
 
   findOne(id: number) {

@@ -25,7 +25,11 @@ export class ShowtimesService {
     throw new InternalServerErrorException(`Failed to ${action}`);
   }
   async create(userId: string, createShowtimeDto: CreateShowtimeDto) {
-    const { startTime } = createShowtimeDto;
+    const { startTime, endTime } = createShowtimeDto;
+
+    if (startTime > endTime) {
+      throw new BadRequestException('Start time must be before end time');
+    }
 
     if (startTime < new Date()) {
       throw new BadRequestException('Start time must be in the future');

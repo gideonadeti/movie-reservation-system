@@ -17,6 +17,7 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { RolesGuard } from 'src/roles/roles.guard';
 import { Roles } from 'src/roles/roles.decorator';
 import { Role } from 'generated/prisma';
+import { UserId } from 'src/user-id/user-id.decorator';
 
 @ApiTags('Showtimes')
 @ApiBearerAuth()
@@ -28,8 +29,11 @@ export class ShowtimesController {
   @UseGuards(RolesGuard)
   @Roles(Role.ADMIN)
   @Post()
-  create(@Body() createShowtimeDto: CreateShowtimeDto) {
-    return this.showtimesService.create(createShowtimeDto);
+  create(
+    @UserId() userId: string,
+    @Body() createShowtimeDto: CreateShowtimeDto,
+  ) {
+    return this.showtimesService.create(userId, createShowtimeDto);
   }
 
   @Get()

@@ -39,7 +39,7 @@ model RefreshToken {
 
 model Movie {
   id          String   @id @default(uuid())
-  title       String
+  title       String   @unique
   description String
   imageUrl    String
   genre       String

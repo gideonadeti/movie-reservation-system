@@ -1,7 +1,6 @@
 import {
   BadRequestException,
   ConflictException,
-  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -23,8 +22,6 @@ export class MoviesService {
     this.logger.error(`Failed to ${action}`, (error as Error).stack);
 
     if (error instanceof BadRequestException) {
-      throw error;
-    } else if (error instanceof ForbiddenException) {
       throw error;
     } else if (
       error instanceof Prisma.PrismaClientKnownRequestError &&

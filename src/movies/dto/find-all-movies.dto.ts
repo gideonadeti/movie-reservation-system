@@ -23,21 +23,20 @@ export class FindAllMoviesDto {
   /** Sort by this field */
   @IsOptional()
   @IsIn(['title', 'description', 'genre', 'createdAt', 'updatedAt'])
-  sortBy?: 'title' | 'description' | 'genre' | 'createdAt' | 'updatedAt' =
-    'createdAt';
+  sortBy?: 'title' | 'description' | 'genre' | 'createdAt' | 'updatedAt';
 
   /** Sort order: ascending or descending */
   @IsOptional()
   @IsIn(['asc', 'desc'])
-  order?: 'asc' | 'desc' = 'desc';
+  order?: 'asc' | 'desc';
 
   /** Results per page */
   @IsOptional()
   @IsPositive()
-  limit?: number = 10;
+  limit?: number;
 
   /** Page number */
   @IsOptional()
   @IsPositive()
-  page?: number = 1;
+  page?: number;
 }

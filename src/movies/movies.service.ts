@@ -46,8 +46,20 @@ export class MoviesService {
     }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} movie`;
+  async findOne(id: string) {
+    try {
+      const movie = await this.prismaService.movie.findUnique({
+        where: { id },
+      });
+
+      if (!movie) {
+        throw new BadRequestException(`Movie with id ${id} not found`);
+      }
+
+      return movie;
+    } catch (error) {
+      this.handleError(error, `fetch movie with id ${id}`);
+    }
   }
 
   update(id: number, updateMovieDto: UpdateMovieDto) {

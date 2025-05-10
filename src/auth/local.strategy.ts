@@ -27,13 +27,13 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
 
       return user;
     } catch (error) {
-      this.logger.error('Failed to validate user:', error);
+      this.logger.error('Failed to validate user', (error as Error).stack);
 
       if (error instanceof UnauthorizedException) {
         throw error;
       }
 
-      throw new InternalServerErrorException('Failed to validate user.');
+      throw new InternalServerErrorException('Failed to validate user');
     }
   }
 }

@@ -25,6 +25,12 @@ export class ShowtimesService {
     throw new InternalServerErrorException(`Failed to ${action}`);
   }
   async create(userId: string, createShowtimeDto: CreateShowtimeDto) {
+    const { startTime } = createShowtimeDto;
+
+    if (startTime < new Date()) {
+      throw new BadRequestException('Start time must be in the future');
+    }
+
     try {
       return await this.prismaService.showtime.create({
         data: { ...createShowtimeDto, adminId: userId },

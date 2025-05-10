@@ -1,28 +1,23 @@
 import { IsIn, IsOptional, IsPositive, IsString } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class FindAllMoviesDto {
-  /**
-   * Movie's title
-   * @example Incept
-   */
+  /** Movie's title */
   @IsOptional()
   @IsString()
+  @Transform(({ value }: { value: string }) => value.trim())
   title?: string;
 
-  /**
-   * Movie's description
-   * @example "A skilled thief"
-   */
+  /** Movie's description */
   @IsOptional()
   @IsString()
+  @Transform(({ value }: { value: string }) => value.trim())
   description?: string;
 
-  /**
-   * Movie's genre
-   * @example sci
-   */
+  /** Movie's genre */
   @IsOptional()
   @IsString()
+  @Transform(({ value }: { value: string }) => value.trim())
   genre?: string;
 
   /** Sort by this field */
@@ -37,10 +32,12 @@ export class FindAllMoviesDto {
   order?: 'asc' | 'desc' = 'desc';
 
   /** Results per page */
+  @IsOptional()
   @IsPositive()
   limit?: number = 10;
 
   /** Page number */
+  @IsOptional()
   @IsPositive()
   page?: number = 1;
 }

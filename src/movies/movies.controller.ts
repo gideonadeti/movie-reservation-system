@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 
 import { MoviesService } from './movies.service';
@@ -18,6 +19,7 @@ import { RolesGuard } from 'src/roles/roles.guard';
 import { Roles } from 'src/roles/roles.decorator';
 import { Role } from 'generated/prisma';
 import { UserId } from 'src/user-id/user-id.decorator';
+import { FindAllMoviesDto } from './dto/find-all-movies.dto';
 
 @ApiTags('Movies')
 @ApiBearerAuth()
@@ -34,8 +36,8 @@ export class MoviesController {
   }
 
   @Get()
-  findAll() {
-    return this.moviesService.findAll();
+  findAll(@Query() query: FindAllMoviesDto) {
+    return this.moviesService.findAll(query);
   }
 
   @Get(':id')

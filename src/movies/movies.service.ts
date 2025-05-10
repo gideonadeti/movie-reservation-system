@@ -11,6 +11,7 @@ import { CreateMovieDto } from './dto/create-movie.dto';
 import { UpdateMovieDto } from './dto/update-movie.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Prisma } from 'generated/prisma';
+import { FindAllMoviesDto } from './dto/find-all-movies.dto';
 
 @Injectable()
 export class MoviesService {
@@ -45,9 +46,57 @@ export class MoviesService {
     }
   }
 
-  async findAll() {
+  async findAll(query: FindAllMoviesDto) {
+    const { title, description, genre, sortBy, order, limit, page } = query;
+    const whereConditions: Prisma.MovieWhereInput = {};
+
+    if (title) {
+      whereConditions.title = { contains: title, mode: 'insensitive' };
+    }
+
+    if (description) {
+      whereConditions.description = {
+        contains: description,
+        mode: 'insensitive',
+      };
+    }
+
+    if (genre) {
+      whereConditions.genre = { contains: genre, mode: 'insensitive' };
+    }
+
     try {
-      return await this.prismaService.movie.findMany();
+      if (!page && !limit) {
+        return await this.prismaService.movie.findMany({
+          where: whereConditions,
+          orderBy: { [sortBy as string]: order },
+        });
+      }
+
+      const numberPage = page ? Number(page) : 1;
+      const numberLimit = limit ? Number(limit) : 10;
+      const total = await this.prismaService.movie.count({
+        where: whereConditions,
+      });
+      const lastPage = Math.ceil(total / numberLimit);
+      const movies = await this.prismaService.movie.findMany({
+        where: whereConditions,
+        orderBy: { [sortBy as string]: order },
+        skip: (numberPage - 1) * numberLimit,
+        take: numberLimit,
+      });
+
+      return {
+        movies,
+        metadata: {
+          total,
+          lastPage,
+          page: numberPage,
+          limit: numberLimit,
+          hasNextPage: numberPage < lastPage,
+          hasPreviousPage: numberPage > 1,
+        },
+      };
     } catch (error) {
       this.handleError(error, 'fetch movies');
     }

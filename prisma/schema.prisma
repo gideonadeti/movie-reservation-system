@@ -20,6 +20,7 @@ model User {
 
   refreshToken RefreshToken?
   movies       Movie[]
+  showtimes    Showtime[]
 }
 
 enum Role {
@@ -55,11 +56,13 @@ model Showtime {
   id           String   @id @default(uuid())
   startTime    DateTime
   price        Float
+  adminId      String
   movieId      String
   auditoriumId String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  admin      User       @relation(fields: [adminId], references: [id], onDelete: Cascade)
   movie      Movie      @relation(fields: [movieId], references: [id], onDelete: Cascade)
   auditorium Auditorium @relation(fields: [auditoriumId], references: [id], onDelete: Cascade)
 }

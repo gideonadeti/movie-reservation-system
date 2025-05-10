@@ -38,8 +38,12 @@ export class MoviesService {
     }
   }
 
-  findAll() {
-    return `This action returns all movies`;
+  async findAll() {
+    try {
+      return await this.prismaService.movie.findMany();
+    } catch (error) {
+      this.handleError(error, 'fetch movies');
+    }
   }
 
   findOne(id: number) {

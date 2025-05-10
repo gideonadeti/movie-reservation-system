@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty } from 'class-validator';
+import { IsString, IsNotEmpty, IsUrl } from 'class-validator';
 
 export class CreateMovieDto {
   /**
@@ -21,7 +21,7 @@ export class CreateMovieDto {
    * Movie's poster image url
    * @example "https://example.com/inception.jpg"
    */
-  @IsString()
+  @IsUrl()
   @IsNotEmpty()
   imageUrl: string;
 

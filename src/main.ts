@@ -31,6 +31,7 @@ async function bootstrap() {
     .addBearerAuth()
     .addTag('Auth')
     .addTag('Movies')
+    .addTag('Showtimes')
     .build();
   const options: SwaggerDocumentOptions = {
     operationIdFactory: (_controllerKey: string, methodKey: string) =>

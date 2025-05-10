@@ -14,10 +14,16 @@ model User {
   name      String
   email     String   @unique
   password  String
+  role      Role     @default(NADMIN)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   refreshToken RefreshToken?
+}
+
+enum Role {
+  ADMIN
+  NADMIN
 }
 
 model RefreshToken {

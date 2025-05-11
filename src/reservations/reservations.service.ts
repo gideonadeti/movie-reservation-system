@@ -159,8 +159,62 @@ export class ReservationsService {
     }
   }
 
-  update(id: number, updateReservationDto: UpdateReservationDto) {
-    return `This action updates a #${id} reservation`;
+  async update(
+    userId: string,
+    id: string,
+    updateReservationDto: UpdateReservationDto,
+  ) {
+    let { showtimeId, seatIds } = updateReservationDto;
+
+    try {
+      return await this.prismaService.$transaction(
+        async (tx) => {
+          const reservation = await tx.reservation.findUnique({
+            where: { id, userId },
+            include: { reservedSeats: true },
+          });
+
+          if (!reservation) {
+            throw new Error();
+          }
+
+          showtimeId = showtimeId || reservation.showtimeId;
+          seatIds = seatIds || reservation.reservedSeats.map((r) => r.seatId);
+
+          const showtime = await this.validateShowtimeExists(tx, showtimeId);
+          const seats = await this.validateSeatIds(tx, seatIds);
+
+          this.ensureSeatsInAuditorium(seats, showtime.auditoriumId);
+
+          await this.ensureSeatsNotReserved(tx, seatIds, showtimeId);
+
+          await tx.reservedSeat.deleteMany({
+            where: { reservationId: reservation.id },
+          });
+
+          return tx.reservation.update({
+            where: {
+              id,
+              userId,
+            },
+            data: {
+              userId,
+              showtimeId,
+              reservedSeats: {
+                create: (
+                  seatIds || reservation.reservedSeats.map((r) => r.seatId)
+                ).map((seatId) => ({
+                  seat: { connect: { id: seatId } },
+                })),
+              },
+            },
+          });
+        },
+        { timeout: 10000 }, // 10 seconds
+      );
+    } catch (error) {
+      this.handleError(error, `update reservation with  id ${id}`);
+    }
   }
 
   remove(id: number) {

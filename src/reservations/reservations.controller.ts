@@ -43,10 +43,11 @@ export class ReservationsController {
 
   @Patch(':id')
   update(
+    @UserId() userId: string,
     @Param('id') id: string,
     @Body() updateReservationDto: UpdateReservationDto,
   ) {
-    return this.reservationsService.update(+id, updateReservationDto);
+    return this.reservationsService.update(userId, id, updateReservationDto);
   }
 
   @Delete(':id')

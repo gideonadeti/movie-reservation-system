@@ -62,7 +62,7 @@ export class ShowtimesController {
   @UseGuards(RolesGuard)
   @Roles(Role.ADMIN)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.showtimesService.remove(+id);
+  remove(@UserId() userId: string, @Param('id') id: string) {
+    return this.showtimesService.remove(userId, id);
   }
 }

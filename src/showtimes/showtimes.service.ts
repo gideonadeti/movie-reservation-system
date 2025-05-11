@@ -197,7 +197,20 @@ export class ShowtimesService {
     }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} showtime`;
+  async remove(userId: string, id: string) {
+    try {
+      return await this.prismaService.showtime.delete({
+        where: {
+          id,
+          adminId: userId,
+        },
+        include: {
+          movie: true,
+          auditorium: true,
+        },
+      });
+    } catch (error) {
+      this.handleError(error, `delete showtime with id ${id}`);
+    }
   }
 }

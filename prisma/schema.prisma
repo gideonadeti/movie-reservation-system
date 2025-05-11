@@ -21,6 +21,7 @@ model User {
   refreshToken RefreshToken?
   movies       Movie[]
   showtimes    Showtime[]
+  Reservation  Reservation[]
 }
 
 enum Role {
@@ -63,9 +64,10 @@ model Showtime {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  admin      User       @relation(fields: [adminId], references: [id], onDelete: Cascade)
-  movie      Movie      @relation(fields: [movieId], references: [id], onDelete: Cascade)
-  auditorium Auditorium @relation(fields: [auditoriumId], references: [id], onDelete: Cascade)
+  admin       User          @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  movie       Movie         @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  auditorium  Auditorium    @relation(fields: [auditoriumId], references: [id], onDelete: Cascade)
+  Reservation Reservation[]
 }
 
 model Auditorium {
@@ -85,5 +87,29 @@ model Seat {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  auditorium Auditorium @relation(fields: [auditoriumId], references: [id], onDelete: Cascade)
+  auditorium    Auditorium     @relation(fields: [auditoriumId], references: [id], onDelete: Cascade)
+  reservedSeats ReservedSeat[]
+}
+
+model Reservation {
+  id         String   @id @default(uuid())
+  userId     String
+  showtimeId String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  showtime      Showtime       @relation(fields: [showtimeId], references: [id], onDelete: Cascade)
+  reservedSeats ReservedSeat[]
+}
+
+model ReservedSeat {
+  id            String   @id @default(uuid())
+  seatId        String
+  reservationId String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  seat        Seat        @relation(fields: [seatId], references: [id], onDelete: Cascade)
+  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
 }

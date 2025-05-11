@@ -4,9 +4,10 @@ import { AuthModule } from './auth/auth.module';
 import { LoggingMiddleware } from './logging/logging.middleware';
 import { MoviesModule } from './movies/movies.module';
 import { ShowtimesModule } from './showtimes/showtimes.module';
+import { ReservationsModule } from './reservations/reservations.module';
 
 @Module({
-  imports: [AuthModule, MoviesModule, ShowtimesModule],
+  imports: [AuthModule, MoviesModule, ShowtimesModule, ReservationsModule],
   controllers: [],
   providers: [PrismaService],
 })

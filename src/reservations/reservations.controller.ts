@@ -37,8 +37,8 @@ export class ReservationsController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.reservationsService.findOne(+id);
+  findOne(@UserId() userId: string, @Param('id') id: string) {
+    return this.reservationsService.findOne(userId, id);
   }
 
   @Patch(':id')

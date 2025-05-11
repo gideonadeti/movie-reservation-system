@@ -74,8 +74,23 @@ export class ReservationsService {
     }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} reservation`;
+  async findOne(userId: string, id: string) {
+    try {
+      const reservation = await this.prismaService.reservation.findUnique({
+        where: {
+          id,
+          userId,
+        },
+      });
+
+      if (!reservation) {
+        throw new BadRequestException(`Reservation with id ${id} not found`);
+      }
+
+      return reservation;
+    } catch (error) {
+      this.handleError(error, `fetch reservation with id ${id}`);
+    }
   }
 
   update(id: number, updateReservationDto: UpdateReservationDto) {

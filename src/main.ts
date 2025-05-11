@@ -32,6 +32,7 @@ async function bootstrap() {
     .addTag('Auth')
     .addTag('Movies')
     .addTag('Showtimes')
+    .addTag('Reservations')
     .build();
   const options: SwaggerDocumentOptions = {
     operationIdFactory: (_controllerKey: string, methodKey: string) =>

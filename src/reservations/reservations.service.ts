@@ -25,19 +25,34 @@ export class ReservationsService {
     throw new InternalServerErrorException(`Failed to ${action}`);
   }
   async create(userId: string, createReservationDto: CreateReservationDto) {
+    const { showtimeId, seatIds } = createReservationDto;
+
     try {
-      return await this.prismaService.reservation.create({
-        data: {
-          userId,
-          showtimeId: createReservationDto.showtimeId,
-          reservedSeats: {
-            create: createReservationDto.seatIds.map((seatId) => ({
-              seat: {
-                connect: { id: seatId },
-              },
-            })),
+      return await this.prismaService.$transaction(async (tx) => {
+        const reservedSeats = await tx.reservedSeat.findMany({
+          where: {
+            seatId: { in: seatIds },
+            reservation: { showtimeId },
           },
-        },
+          select: { seatId: true },
+        });
+
+        if (reservedSeats.length > 0) {
+          const takenIds = reservedSeats.map((seat) => seat.seatId).join(', ');
+          throw new BadRequestException(`Seats already reserved: ${takenIds}`);
+        }
+
+        return tx.reservation.create({
+          data: {
+            userId,
+            showtimeId,
+            reservedSeats: {
+              create: seatIds.map((seatId) => ({
+                seat: { connect: { id: seatId } },
+              })),
+            },
+          },
+        });
       });
     } catch (error) {
       this.handleError(error, 'create reservation');

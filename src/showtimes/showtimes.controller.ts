@@ -52,10 +52,11 @@ export class ShowtimesController {
   @Roles(Role.ADMIN)
   @Patch(':id')
   update(
+    @UserId() userId: string,
     @Param('id') id: string,
     @Body() updateShowtimeDto: UpdateShowtimeDto,
   ) {
-    return this.showtimesService.update(+id, updateShowtimeDto);
+    return this.showtimesService.update(userId, id, updateShowtimeDto);
   }
 
   @UseGuards(RolesGuard)

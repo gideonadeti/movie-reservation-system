@@ -175,8 +175,26 @@ export class ShowtimesService {
     }
   }
 
-  update(id: number, updateShowtimeDto: UpdateShowtimeDto) {
-    return `This action updates a #${id} showtime`;
+  async update(
+    userId: string,
+    id: string,
+    updateShowtimeDto: UpdateShowtimeDto,
+  ) {
+    try {
+      return await this.prismaService.showtime.update({
+        where: {
+          id,
+          adminId: userId,
+        },
+        data: updateShowtimeDto,
+        include: {
+          movie: true,
+          auditorium: true,
+        },
+      });
+    } catch (error) {
+      this.handleError(error, `update showtime with id ${id}`);
+    }
   }
 
   remove(id: number) {

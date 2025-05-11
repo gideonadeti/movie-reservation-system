@@ -33,18 +33,8 @@ export class MoviesService {
     throw new InternalServerErrorException(`Failed to ${action}`);
   }
 
-  async create(userId: string, createMovieDto: CreateMovieDto) {
-    try {
-      return await this.prismaService.movie.create({
-        data: { ...createMovieDto, adminId: userId },
-      });
-    } catch (error) {
-      this.handleError(error, 'create movie');
-    }
-  }
-
-  async findAll(query: FindAllMoviesDto) {
-    const { title, description, genre, sortBy, order, limit, page } = query;
+  private getWhereConditions(query: FindAllMoviesDto) {
+    const { title, description, genre } = query;
     const whereConditions: Prisma.MovieWhereInput = {};
 
     if (title) {
@@ -61,6 +51,23 @@ export class MoviesService {
     if (genre) {
       whereConditions.genre = { contains: genre, mode: 'insensitive' };
     }
+
+    return whereConditions;
+  }
+
+  async create(userId: string, createMovieDto: CreateMovieDto) {
+    try {
+      return await this.prismaService.movie.create({
+        data: { ...createMovieDto, adminId: userId },
+      });
+    } catch (error) {
+      this.handleError(error, 'create movie');
+    }
+  }
+
+  async findAll(query: FindAllMoviesDto) {
+    const { sortBy, order, limit, page } = query;
+    const whereConditions = this.getWhereConditions(query);
 
     try {
       if (!page && !limit) {

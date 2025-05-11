@@ -29,6 +29,46 @@ export class ReservationsService {
 
     try {
       return await this.prismaService.$transaction(async (tx) => {
+        const showtime = await tx.showtime.findUnique({
+          where: { id: showtimeId },
+          select: { auditoriumId: true },
+        });
+
+        if (!showtime) {
+          throw new BadRequestException(
+            `Showtime with ID ${showtimeId} not found`,
+          );
+        }
+
+        const seats = await tx.seat.findMany({
+          where: {
+            id: { in: seatIds },
+          },
+        });
+
+        if (seats.length !== seatIds.length) {
+          const foundIds = new Set(seats.map((seat) => seat.id));
+          const invalidIds = seatIds.filter((id) => !foundIds.has(id));
+
+          throw new BadRequestException(
+            `Invalid seat IDs: ${invalidIds.join(', ')}`,
+          );
+        }
+
+        const invalidAuditoriumSeats = seats.filter(
+          (seat) => seat.auditoriumId !== showtime.auditoriumId,
+        );
+
+        if (invalidAuditoriumSeats.length > 0) {
+          const invalidIds = invalidAuditoriumSeats
+            .map((seat) => seat.id)
+            .join(', ');
+
+          throw new BadRequestException(
+            `Seats not in this auditorium: ${invalidIds}`,
+          );
+        }
+
         const reservedSeats = await tx.reservedSeat.findMany({
           where: {
             seatId: { in: seatIds },

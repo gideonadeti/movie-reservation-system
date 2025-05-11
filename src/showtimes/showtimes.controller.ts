@@ -45,7 +45,7 @@ export class ShowtimesController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.showtimesService.findOne(+id);
+    return this.showtimesService.findOne(id);
   }
 
   @UseGuards(RolesGuard)

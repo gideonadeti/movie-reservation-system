@@ -152,8 +152,24 @@ export class ShowtimesService {
     }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} showtime`;
+  async findOne(id: string) {
+    try {
+      const showtime = await this.prismaService.showtime.findUnique({
+        where: { id },
+        include: {
+          movie: true,
+          auditorium: true,
+        },
+      });
+
+      if (!showtime) {
+        throw new BadRequestException(`Showtime with id ${id} not found`);
+      }
+
+      return showtime;
+    } catch (error) {
+      this.handleError(error, `fetch showtime with id ${id}`);
+    }
   }
 
   update(id: number, updateShowtimeDto: UpdateShowtimeDto) {

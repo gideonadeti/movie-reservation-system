@@ -217,7 +217,16 @@ export class ReservationsService {
     }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} reservation`;
+  remove(userId: string, id: string) {
+    try {
+      return this.prismaService.reservation.delete({
+        where: {
+          id,
+          userId,
+        },
+      });
+    } catch (error) {
+      this.handleError(error, `delete reservation with id ${id}`);
+    }
   }
 }

@@ -59,8 +59,19 @@ export class ReservationsService {
     }
   }
 
-  findAll() {
-    return `This action returns all reservations`;
+  async findAll(userId: string) {
+    try {
+      return await this.prismaService.reservation.findMany({
+        where: {
+          userId,
+        },
+        include: {
+          reservedSeats: true,
+        },
+      });
+    } catch (error) {
+      this.handleError(error, 'find all reservations');
+    }
   }
 
   findOne(id: number) {

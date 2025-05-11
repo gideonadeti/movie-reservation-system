@@ -8,6 +8,7 @@ import {
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationDto } from './dto/update-reservation.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { Prisma, Seat } from 'generated/prisma';
 
 @Injectable()
 export class ReservationsService {
@@ -24,63 +25,88 @@ export class ReservationsService {
 
     throw new InternalServerErrorException(`Failed to ${action}`);
   }
+
+  private async validateShowtimeExists(
+    tx: Prisma.TransactionClient,
+    showtimeId: string,
+  ) {
+    const showtime = await tx.showtime.findUnique({
+      where: { id: showtimeId },
+      select: { auditoriumId: true },
+    });
+
+    if (!showtime) {
+      throw new BadRequestException(`Showtime with ID ${showtimeId} not found`);
+    }
+
+    return showtime;
+  }
+
+  private async validateSeatIds(
+    tx: Prisma.TransactionClient,
+    seatIds: string[],
+  ) {
+    const seats = await tx.seat.findMany({
+      where: { id: { in: seatIds } },
+    });
+
+    if (seats.length !== seatIds.length) {
+      const foundIds = new Set(seats.map((s) => s.id));
+      const invalidIds = seatIds.filter((id) => !foundIds.has(id));
+
+      throw new BadRequestException(
+        `Invalid seat IDs: ${invalidIds.join(', ')}`,
+      );
+    }
+
+    return seats;
+  }
+
+  private ensureSeatsInAuditorium(seats: Seat[], auditoriumId: string) {
+    const invalidSeats = seats.filter((s) => s.auditoriumId !== auditoriumId);
+
+    if (invalidSeats.length > 0) {
+      const invalidIds = invalidSeats.map((s) => s.id).join(', ');
+
+      throw new BadRequestException(
+        `Seats not in this auditorium: ${invalidIds}`,
+      );
+    }
+  }
+
+  private async ensureSeatsNotReserved(
+    tx: Prisma.TransactionClient,
+    seatIds: string[],
+    showtimeId: string,
+  ) {
+    const reservedSeats = await tx.reservedSeat.findMany({
+      where: {
+        seatId: { in: seatIds },
+        reservation: { showtimeId },
+      },
+      select: { seatId: true },
+    });
+
+    if (reservedSeats.length > 0) {
+      const reservedSeatIds = reservedSeats.map((r) => r.seatId).join(', ');
+
+      throw new BadRequestException(
+        `Seats already reserved: ${reservedSeatIds}`,
+      );
+    }
+  }
+
   async create(userId: string, createReservationDto: CreateReservationDto) {
     const { showtimeId, seatIds } = createReservationDto;
 
     try {
       return await this.prismaService.$transaction(async (tx) => {
-        const showtime = await tx.showtime.findUnique({
-          where: { id: showtimeId },
-          select: { auditoriumId: true },
-        });
+        const showtime = await this.validateShowtimeExists(tx, showtimeId);
+        const seats = await this.validateSeatIds(tx, seatIds);
 
-        if (!showtime) {
-          throw new BadRequestException(
-            `Showtime with ID ${showtimeId} not found`,
-          );
-        }
+        this.ensureSeatsInAuditorium(seats, showtime.auditoriumId);
 
-        const seats = await tx.seat.findMany({
-          where: {
-            id: { in: seatIds },
-          },
-        });
-
-        if (seats.length !== seatIds.length) {
-          const foundIds = new Set(seats.map((seat) => seat.id));
-          const invalidIds = seatIds.filter((id) => !foundIds.has(id));
-
-          throw new BadRequestException(
-            `Invalid seat IDs: ${invalidIds.join(', ')}`,
-          );
-        }
-
-        const invalidAuditoriumSeats = seats.filter(
-          (seat) => seat.auditoriumId !== showtime.auditoriumId,
-        );
-
-        if (invalidAuditoriumSeats.length > 0) {
-          const invalidIds = invalidAuditoriumSeats
-            .map((seat) => seat.id)
-            .join(', ');
-
-          throw new BadRequestException(
-            `Seats not in this auditorium: ${invalidIds}`,
-          );
-        }
-
-        const reservedSeats = await tx.reservedSeat.findMany({
-          where: {
-            seatId: { in: seatIds },
-            reservation: { showtimeId },
-          },
-          select: { seatId: true },
-        });
-
-        if (reservedSeats.length > 0) {
-          const takenIds = reservedSeats.map((seat) => seat.seatId).join(', ');
-          throw new BadRequestException(`Seats already reserved: ${takenIds}`);
-        }
+        await this.ensureSeatsNotReserved(tx, seatIds, showtimeId);
 
         return tx.reservation.create({
           data: {

@@ -26,6 +26,56 @@ export class ShowtimesService {
 
     throw new InternalServerErrorException(`Failed to ${action}`);
   }
+
+  private getWhereConditions(query: FindAllShowtimesDto) {
+    const {
+      adminId,
+      auditoriumId,
+      endTimeFrom,
+      endTimeTo,
+      maxPrice,
+      minPrice,
+      movieId,
+      startTimeFrom,
+      startTimeTo,
+    } = query;
+    const whereConditions: Prisma.ShowtimeWhereInput = {};
+
+    if (adminId) {
+      whereConditions.adminId = adminId;
+    }
+
+    if (auditoriumId) {
+      whereConditions.auditoriumId = auditoriumId;
+    }
+
+    if (movieId) {
+      whereConditions.movieId = movieId;
+    }
+
+    if (startTimeFrom || startTimeTo) {
+      whereConditions.startTime = {};
+
+      if (startTimeFrom) whereConditions.startTime.gte = startTimeFrom;
+      if (startTimeTo) whereConditions.startTime.lte = startTimeTo;
+    }
+
+    if (endTimeFrom || endTimeTo) {
+      whereConditions.endTime = {};
+
+      if (endTimeFrom) whereConditions.endTime.gte = endTimeFrom;
+      if (endTimeTo) whereConditions.endTime.lte = endTimeTo;
+    }
+
+    if (minPrice || maxPrice) {
+      whereConditions.price = {};
+
+      if (minPrice) whereConditions.price.gte = minPrice;
+      if (maxPrice) whereConditions.price.lte = maxPrice;
+    }
+
+    return whereConditions;
+  }
   async create(userId: string, createShowtimeDto: CreateShowtimeDto) {
     const { startTime, endTime, auditoriumId } = createShowtimeDto;
 
@@ -65,55 +115,8 @@ export class ShowtimesService {
   }
 
   async findAll(query: FindAllShowtimesDto) {
-    const {
-      adminId,
-      auditoriumId,
-      endTimeFrom,
-      endTimeTo,
-      limit,
-      maxPrice,
-      minPrice,
-      movieId,
-      order,
-      page,
-      sortBy,
-      startTimeFrom,
-      startTimeTo,
-    } = query;
-    const whereConditions: Prisma.ShowtimeWhereInput = {};
-
-    if (adminId) {
-      whereConditions.adminId = adminId;
-    }
-
-    if (auditoriumId) {
-      whereConditions.auditoriumId = auditoriumId;
-    }
-
-    if (movieId) {
-      whereConditions.movieId = movieId;
-    }
-
-    if (startTimeFrom || startTimeTo) {
-      whereConditions.startTime = {};
-
-      if (startTimeFrom) whereConditions.startTime.gte = startTimeFrom;
-      if (startTimeTo) whereConditions.startTime.lte = startTimeTo;
-    }
-
-    if (endTimeFrom || endTimeTo) {
-      whereConditions.endTime = {};
-
-      if (endTimeFrom) whereConditions.endTime.gte = endTimeFrom;
-      if (endTimeTo) whereConditions.endTime.lte = endTimeTo;
-    }
-
-    if (minPrice || maxPrice) {
-      whereConditions.price = {};
-
-      if (minPrice) whereConditions.price.gte = minPrice;
-      if (maxPrice) whereConditions.price.lte = maxPrice;
-    }
+    const { sortBy, order, limit, page } = query;
+    const whereConditions = this.getWhereConditions(query);
 
     try {
       if (!page && !limit) {

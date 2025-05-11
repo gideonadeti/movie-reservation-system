@@ -14,6 +14,7 @@ import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationDto } from './dto/update-reservation.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { UserId } from 'src/user-id/user-id.decorator';
 
 @ApiTags('Reservations')
 @ApiBearerAuth()
@@ -23,8 +24,11 @@ export class ReservationsController {
   constructor(private readonly reservationsService: ReservationsService) {}
 
   @Post()
-  create(@Body() createReservationDto: CreateReservationDto) {
-    return this.reservationsService.create(createReservationDto);
+  create(
+    @UserId() userId: string,
+    @Body() createReservationDto: CreateReservationDto,
+  ) {
+    return this.reservationsService.create(userId, createReservationDto);
   }
 
   @Get()

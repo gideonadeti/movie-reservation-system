@@ -96,6 +96,35 @@ export class ReservationsService {
     }
   }
 
+  private async ensureAuditoriumCapacityIsNotExceeded(
+    tx: Prisma.TransactionClient,
+    showtimeId: string,
+    seatIds: string[],
+    showtime: { auditorium: { capacity: number } },
+  ) {
+    const currentReservedCount = await tx.reservedSeat.count({
+      where: {
+        reservation: { showtimeId },
+      },
+    });
+
+    if (currentReservedCount + seatIds.length > showtime.auditorium.capacity) {
+      const numOfSeatsLeft =
+        showtime.auditorium.capacity - currentReservedCount;
+      let errorMessage = 'Reservation exceeds auditorium capacity.';
+
+      if (numOfSeatsLeft === 0) {
+        errorMessage += ` No seats left.`;
+      } else if (numOfSeatsLeft === 1) {
+        errorMessage += ` Only ${numOfSeatsLeft} seat left.`;
+      } else {
+        errorMessage += ` Only ${numOfSeatsLeft} seats left.`;
+      }
+
+      throw new BadRequestException(errorMessage);
+    }
+  }
+
   async create(userId: string, createReservationDto: CreateReservationDto) {
     const { showtimeId, seatIds } = createReservationDto;
 
@@ -108,31 +137,12 @@ export class ReservationsService {
         this.ensureSeatsInAuditorium(seats, showtime.auditoriumId);
 
         await this.ensureSeatsNotReserved(tx, seatIds, showtimeId);
-
-        const currentReservedCount = await tx.reservedSeat.count({
-          where: {
-            reservation: { showtimeId },
-          },
-        });
-
-        if (
-          currentReservedCount + seatIds.length >
-          showtime.auditorium.capacity
-        ) {
-          const numOfSeatsLeft =
-            showtime.auditorium.capacity - currentReservedCount;
-          let errorMessage = 'Reservation exceeds auditorium capacity.';
-
-          if (numOfSeatsLeft === 0) {
-            errorMessage += ` No seats left.`;
-          } else if (numOfSeatsLeft === 1) {
-            errorMessage += ` Only ${numOfSeatsLeft} seat left.`;
-          } else {
-            errorMessage += ` Only ${numOfSeatsLeft} seats left.`;
-          }
-
-          throw new BadRequestException(errorMessage);
-        }
+        await this.ensureAuditoriumCapacityIsNotExceeded(
+          tx,
+          showtimeId,
+          seatIds,
+          showtime,
+        );
 
         return tx.reservation.create({
           data: {

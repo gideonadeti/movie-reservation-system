@@ -31,9 +31,33 @@ export class SeatsService {
     throw new InternalServerErrorException(`Failed to ${action}`);
   }
   async create(userId: string, createSeatDto: CreateSeatDto) {
+    const { auditoriumId } = createSeatDto;
+
     try {
-      return await this.prismaService.seat.create({
-        data: { ...createSeatDto, adminId: userId },
+      return await this.prismaService.$transaction(async (tx) => {
+        const auditorium = await tx.auditorium.findUnique({
+          where: { id: auditoriumId },
+        });
+
+        if (!auditorium) {
+          throw new BadRequestException(
+            `Auditorium with id ${auditoriumId} not found`,
+          );
+        }
+
+        const seatCount = await tx.seat.count({
+          where: { auditoriumId },
+        });
+
+        if (seatCount + 1 > auditorium.capacity) {
+          throw new BadRequestException(
+            `Auditorium with id ${auditoriumId} is full`,
+          );
+        }
+
+        return tx.seat.create({
+          data: { ...createSeatDto, adminId: userId },
+        });
       });
     } catch (error) {
       this.handleError(error, 'create seat');

@@ -223,6 +223,12 @@ export class ReservationsService {
           this.ensureSeatsInAuditorium(seats, showtime.auditoriumId);
 
           await this.ensureSeatsNotReserved(tx, seatIds, showtimeId);
+          await this.ensureAuditoriumCapacityIsNotExceeded(
+            tx,
+            showtimeId,
+            seatIds,
+            showtime,
+          );
 
           await tx.reservedSeat.deleteMany({
             where: { reservationId: reservation.id },

@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "Seat" ADD COLUMN     "adminId" TEXT NOT NULL DEFAULT '0c3fc92c-60ef-4b15-90f2-233d2eb19664';
+
+-- AddForeignKey
+ALTER TABLE "Seat" ADD CONSTRAINT "Seat_adminId_fkey" FOREIGN KEY ("adminId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;

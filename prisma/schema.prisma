@@ -23,6 +23,7 @@ model User {
   showtimes    Showtime[]
   Reservation  Reservation[]
   auditoriums  Auditorium[]
+  seats        Seat[]
 }
 
 enum Role {
@@ -88,10 +89,12 @@ model Seat {
   id           String   @id @default(uuid())
   label        String
   auditoriumId String
+  adminId      String   @default("0c3fc92c-60ef-4b15-90f2-233d2eb19664")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   auditorium    Auditorium     @relation(fields: [auditoriumId], references: [id], onDelete: Cascade)
+  admin         User           @relation(fields: [adminId], references: [id], onDelete: Cascade)
   reservedSeats ReservedSeat[]
 }
 

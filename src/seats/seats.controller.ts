@@ -17,6 +17,7 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { RolesGuard } from 'src/roles/roles.guard';
 import { Roles } from 'src/roles/roles.decorator';
 import { Role } from 'generated/prisma';
+import { UserId } from 'src/user-id/user-id.decorator';
 
 @ApiTags('Seats')
 @ApiBearerAuth()
@@ -28,8 +29,8 @@ export class SeatsController {
   @UseGuards(RolesGuard)
   @Roles(Role.ADMIN)
   @Post()
-  create(@Body() createSeatDto: CreateSeatDto) {
-    return this.seatsService.create(createSeatDto);
+  create(@UserId() userId: string, @Body() createSeatDto: CreateSeatDto) {
+    return this.seatsService.create(userId, createSeatDto);
   }
 
   @Get()

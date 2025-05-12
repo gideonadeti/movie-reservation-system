@@ -23,8 +23,14 @@ export class SeatsService {
 
     throw new InternalServerErrorException(`Failed to ${action}`);
   }
-  create(createSeatDto: CreateSeatDto) {
-    return 'This action adds a new seat';
+  async create(userId: string, createSeatDto: CreateSeatDto) {
+    try {
+      return await this.prismaService.seat.create({
+        data: { ...createSeatDto, adminId: userId },
+      });
+    } catch (error) {
+      this.handleError(error, 'create seat');
+    }
   }
 
   findAll() {

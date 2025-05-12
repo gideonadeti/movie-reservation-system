@@ -35,8 +35,12 @@ export class AuditoriumsService {
     }
   }
 
-  findAll() {
-    return `This action returns all auditoriums`;
+  async findAll() {
+    try {
+      return await this.prismaService.auditorium.findMany();
+    } catch (error) {
+      this.handleError(error, 'fetch auditoriums');
+    }
   }
 
   findOne(id: number) {

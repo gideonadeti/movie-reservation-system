@@ -14,6 +14,9 @@ import { AuditoriumsService } from './auditoriums.service';
 import { CreateAuditoriumDto } from './dto/create-auditorium.dto';
 import { UpdateAuditoriumDto } from './dto/update-auditorium.dto';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { RolesGuard } from 'src/roles/roles.guard';
+import { Roles } from 'src/roles/roles.decorator';
+import { Role } from 'generated/prisma';
 
 @ApiTags('Auditoriums')
 @ApiBearerAuth()
@@ -22,6 +25,8 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 export class AuditoriumsController {
   constructor(private readonly auditoriumsService: AuditoriumsService) {}
 
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
   @Post()
   create(@Body() createAuditoriumDto: CreateAuditoriumDto) {
     return this.auditoriumsService.create(createAuditoriumDto);
@@ -37,6 +42,8 @@ export class AuditoriumsController {
     return this.auditoriumsService.findOne(+id);
   }
 
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
   @Patch(':id')
   update(
     @Param('id') id: string,
@@ -45,6 +52,8 @@ export class AuditoriumsController {
     return this.auditoriumsService.update(+id, updateAuditoriumDto);
   }
 
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.auditoriumsService.remove(+id);

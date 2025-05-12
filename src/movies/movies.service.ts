@@ -122,6 +122,27 @@ export class MoviesService {
     }
   }
 
+  async findReports(id: string) {
+    try {
+      const movie = await this.prismaService.movie.findUnique({
+        where: { id },
+        include: {
+          showtimes: true,
+        },
+      });
+
+      if (!movie) {
+        throw new BadRequestException(`Movie with id ${id} not found`);
+      }
+
+      return {
+        numberOfShowtimes: movie.showtimes.length,
+      };
+    } catch (error) {
+      this.handleError(error, `fetch movie with id ${id}`);
+    }
+  }
+
   async update(userId: string, id: string, updateMovieDto: UpdateMovieDto) {
     try {
       return await this.prismaService.movie.update({

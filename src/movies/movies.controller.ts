@@ -45,6 +45,11 @@ export class MoviesController {
     return this.moviesService.findOne(id);
   }
 
+  @Get(':id/reports')
+  findReports(@Param('id') id: string) {
+    return this.moviesService.findReports(id);
+  }
+
   @UseGuards(RolesGuard)
   @Roles(Role.ADMIN)
   @Patch(':id')

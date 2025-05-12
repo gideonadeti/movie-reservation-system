@@ -40,7 +40,7 @@ export class SeatsController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.seatsService.findOne(+id);
+    return this.seatsService.findOne(id);
   }
 
   @UseGuards(RolesGuard)

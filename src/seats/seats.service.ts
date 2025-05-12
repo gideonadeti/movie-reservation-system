@@ -41,8 +41,12 @@ export class SeatsService {
     }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} seat`;
+  async findOne(id: string) {
+    try {
+      return await this.prismaService.seat.findUnique({ where: { id } });
+    } catch (error) {
+      this.handleError(error, `fetch seat with id ${id}`);
+    }
   }
 
   update(id: number, updateSeatDto: UpdateSeatDto) {

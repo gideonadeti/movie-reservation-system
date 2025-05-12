@@ -4,7 +4,11 @@ import {
   IsUUID,
   ArrayNotEmpty,
   ArrayUnique,
+  IsDefined,
+  IsIn,
 } from 'class-validator';
+
+import { ReservationStatus } from 'generated/prisma';
 
 export class CreateReservationDto {
   /**
@@ -24,4 +28,12 @@ export class CreateReservationDto {
   @ArrayUnique()
   @IsUUID('all', { each: true })
   seatIds: string[];
+
+  /**
+   * Reservation's status
+   * @example 'CONFIRMED'
+   */
+  @IsDefined()
+  @IsIn(Object.values(ReservationStatus))
+  status?: ReservationStatus;
 }

@@ -1,8 +1,23 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+} from '@nestjs/common';
+
 import { AuditoriumsService } from './auditoriums.service';
 import { CreateAuditoriumDto } from './dto/create-auditorium.dto';
 import { UpdateAuditoriumDto } from './dto/update-auditorium.dto';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 
+@ApiTags('Auditoriums')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('auditoriums')
 export class AuditoriumsController {
   constructor(private readonly auditoriumsService: AuditoriumsService) {}
@@ -23,7 +38,10 @@ export class AuditoriumsController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateAuditoriumDto: UpdateAuditoriumDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateAuditoriumDto: UpdateAuditoriumDto,
+  ) {
     return this.auditoriumsService.update(+id, updateAuditoriumDto);
   }
 

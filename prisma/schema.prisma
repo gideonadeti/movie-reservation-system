@@ -22,6 +22,7 @@ model User {
   movies       Movie[]
   showtimes    Showtime[]
   Reservation  Reservation[]
+  auditoriums  Auditorium[]
 }
 
 enum Role {
@@ -73,9 +74,11 @@ model Showtime {
 model Auditorium {
   id        String   @id @default(uuid())
   name      String
+  adminId   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  admin     User       @relation(fields: [adminId], references: [id], onDelete: Cascade)
   seats     Seat[]
   showtimes Showtime[]
 }

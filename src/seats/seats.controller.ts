@@ -1,12 +1,32 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+} from '@nestjs/common';
+
 import { SeatsService } from './seats.service';
 import { CreateSeatDto } from './dto/create-seat.dto';
 import { UpdateSeatDto } from './dto/update-seat.dto';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { RolesGuard } from 'src/roles/roles.guard';
+import { Roles } from 'src/roles/roles.decorator';
+import { Role } from 'generated/prisma';
 
+@ApiTags('Seats')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('seats')
 export class SeatsController {
   constructor(private readonly seatsService: SeatsService) {}
 
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
   @Post()
   create(@Body() createSeatDto: CreateSeatDto) {
     return this.seatsService.create(createSeatDto);
@@ -22,11 +42,15 @@ export class SeatsController {
     return this.seatsService.findOne(+id);
   }
 
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateSeatDto: UpdateSeatDto) {
     return this.seatsService.update(+id, updateSeatDto);
   }
 
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.seatsService.remove(+id);

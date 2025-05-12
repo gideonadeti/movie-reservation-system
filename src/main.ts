@@ -34,6 +34,7 @@ async function bootstrap() {
     .addTag('Showtimes')
     .addTag('Reservations')
     .addTag('Auditoriums')
+    .addTag('Seats')
     .build();
   const options: SwaggerDocumentOptions = {
     operationIdFactory: (_controllerKey: string, methodKey: string) =>

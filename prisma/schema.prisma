@@ -96,6 +96,8 @@ model Seat {
   auditorium    Auditorium     @relation(fields: [auditoriumId], references: [id], onDelete: Cascade)
   admin         User           @relation(fields: [adminId], references: [id], onDelete: Cascade)
   reservedSeats ReservedSeat[]
+
+  @@unique([label, auditoriumId])
 }
 
 model Reservation {

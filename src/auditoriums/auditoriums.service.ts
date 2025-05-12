@@ -1,9 +1,30 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
+
 import { CreateAuditoriumDto } from './dto/create-auditorium.dto';
 import { UpdateAuditoriumDto } from './dto/update-auditorium.dto';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class AuditoriumsService {
+  constructor(private prismaService: PrismaService) {}
+
+  private logger = new Logger(AuditoriumsService.name);
+
+  private handleError(error: any, action: string) {
+    this.logger.error(`Failed to ${action}`, (error as Error).stack);
+
+    if (error instanceof BadRequestException) {
+      throw error;
+    }
+
+    throw new InternalServerErrorException(`Failed to ${action}`);
+  }
+
   create(createAuditoriumDto: CreateAuditoriumDto) {
     return 'This action adds a new auditorium';
   }

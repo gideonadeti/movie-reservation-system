@@ -32,7 +32,7 @@ export class ReservationsService {
   ) {
     const showtime = await tx.showtime.findUnique({
       where: { id: showtimeId },
-      select: { auditoriumId: true, auditorium: true },
+      select: { auditoriumId: true, auditorium: true, startTime: true },
     });
 
     if (!showtime) {
@@ -200,7 +200,7 @@ export class ReservationsService {
     id: string,
     updateReservationDto: UpdateReservationDto,
   ) {
-    let { showtimeId, seatIds } = updateReservationDto;
+    let { showtimeId, seatIds, status } = updateReservationDto;
 
     try {
       return await this.prismaService.$transaction(
@@ -219,6 +219,14 @@ export class ReservationsService {
 
           const showtime = await this.validateShowtimeExists(tx, showtimeId);
           const seats = await this.validateSeatIds(tx, seatIds);
+
+          if (status && status === 'CANCELLED') {
+            if (showtime.startTime < new Date()) {
+              throw new BadRequestException(
+                'Cannot cancel a reservation that has already started',
+              );
+            }
+          }
 
           this.ensureSeatsInAuditorium(seats, showtime.auditoriumId);
 

@@ -1,9 +1,28 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { CreateSeatDto } from './dto/create-seat.dto';
 import { UpdateSeatDto } from './dto/update-seat.dto';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class SeatsService {
+  constructor(private prismaService: PrismaService) {}
+
+  private logger = new Logger(SeatsService.name);
+
+  private handleError(error: any, action: string) {
+    this.logger.error(`Failed to ${action}`, (error as Error).stack);
+
+    if (error instanceof BadRequestException) {
+      throw error;
+    }
+
+    throw new InternalServerErrorException(`Failed to ${action}`);
+  }
   create(createSeatDto: CreateSeatDto) {
     return 'This action adds a new seat';
   }

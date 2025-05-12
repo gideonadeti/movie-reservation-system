@@ -43,7 +43,7 @@ export class AuditoriumsController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.auditoriumsService.findOne(+id);
+    return this.auditoriumsService.findOne(id);
   }
 
   @UseGuards(RolesGuard)

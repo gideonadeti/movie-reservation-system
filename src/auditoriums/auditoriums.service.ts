@@ -43,8 +43,20 @@ export class AuditoriumsService {
     }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} auditorium`;
+  async findOne(id: string) {
+    try {
+      const auditorium = await this.prismaService.auditorium.findUnique({
+        where: { id },
+      });
+
+      if (!auditorium) {
+        throw new BadRequestException(`Auditorium with id ${id} not found`);
+      }
+
+      return auditorium;
+    } catch (error) {
+      this.handleError(error, `fetch auditorium with id ${id}`);
+    }
   }
 
   update(id: number, updateAuditoriumDto: UpdateAuditoriumDto) {

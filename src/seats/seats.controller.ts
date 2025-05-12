@@ -57,7 +57,7 @@ export class SeatsController {
   @UseGuards(RolesGuard)
   @Roles(Role.ADMIN)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.seatsService.remove(+id);
+  remove(@UserId() userId: string, @Param('id') id: string) {
+    return this.seatsService.remove(userId, id);
   }
 }

@@ -63,7 +63,16 @@ export class SeatsService {
     }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} seat`;
+  async remove(userId: string, id: string) {
+    try {
+      return await this.prismaService.seat.delete({
+        where: {
+          id,
+          adminId: userId,
+        },
+      });
+    } catch (error) {
+      this.handleError(error, `delete seat with id ${id}`);
+    }
   }
 }

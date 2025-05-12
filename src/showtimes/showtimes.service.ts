@@ -175,6 +175,38 @@ export class ShowtimesService {
     }
   }
 
+  async findReports(id: string) {
+    try {
+      const showtime = await this.prismaService.showtime.findUnique({
+        where: { id },
+        include: {
+          movie: true,
+          auditorium: true,
+          reservations: true,
+        },
+      });
+
+      if (!showtime) {
+        throw new BadRequestException(`Showtime with id ${id} not found`);
+      }
+
+      const numberOfReservations = showtime.reservations.length;
+      const totalRevenue = numberOfReservations * showtime.price;
+
+      return {
+        movieTitle: showtime.movie.title,
+        auditoriumName: showtime.auditorium.name,
+        startTime: showtime.startTime,
+        endTime: showtime.endTime,
+        price: showtime.price.toFixed(2),
+        numberOfReservations,
+        totalRevenue: totalRevenue.toFixed(2),
+      };
+    } catch (error) {
+      this.handleError(error, `fetch reports for showtime with id ${id}`);
+    }
+  }
+
   async update(
     userId: string,
     id: string,

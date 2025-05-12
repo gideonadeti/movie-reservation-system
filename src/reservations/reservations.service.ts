@@ -32,7 +32,7 @@ export class ReservationsService {
   ) {
     const showtime = await tx.showtime.findUnique({
       where: { id: showtimeId },
-      select: { auditoriumId: true },
+      select: { auditoriumId: true, auditorium: true },
     });
 
     if (!showtime) {
@@ -102,11 +102,37 @@ export class ReservationsService {
     try {
       return await this.prismaService.$transaction(async (tx) => {
         const showtime = await this.validateShowtimeExists(tx, showtimeId);
+
         const seats = await this.validateSeatIds(tx, seatIds);
 
         this.ensureSeatsInAuditorium(seats, showtime.auditoriumId);
 
         await this.ensureSeatsNotReserved(tx, seatIds, showtimeId);
+
+        const currentReservedCount = await tx.reservedSeat.count({
+          where: {
+            reservation: { showtimeId },
+          },
+        });
+
+        if (
+          currentReservedCount + seatIds.length >
+          showtime.auditorium.capacity
+        ) {
+          const numOfSeatsLeft =
+            showtime.auditorium.capacity - currentReservedCount;
+          let errorMessage = 'Reservation exceeds auditorium capacity.';
+
+          if (numOfSeatsLeft === 0) {
+            errorMessage += ` No seats left.`;
+          } else if (numOfSeatsLeft === 1) {
+            errorMessage += ` Only ${numOfSeatsLeft} seat left.`;
+          } else {
+            errorMessage += ` Only ${numOfSeatsLeft} seats left.`;
+          }
+
+          throw new BadRequestException(errorMessage);
+        }
 
         return tx.reservation.create({
           data: {

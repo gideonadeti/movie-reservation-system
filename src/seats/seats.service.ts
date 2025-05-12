@@ -49,8 +49,18 @@ export class SeatsService {
     }
   }
 
-  update(id: number, updateSeatDto: UpdateSeatDto) {
-    return `This action updates a #${id} seat`;
+  async update(userId: string, id: string, updateSeatDto: UpdateSeatDto) {
+    try {
+      return await this.prismaService.seat.update({
+        where: {
+          id,
+          adminId: userId,
+        },
+        data: updateSeatDto,
+      });
+    } catch (error) {
+      this.handleError(error, `update seat with id ${id}`);
+    }
   }
 
   remove(id: number) {

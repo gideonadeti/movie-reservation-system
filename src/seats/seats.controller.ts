@@ -46,8 +46,12 @@ export class SeatsController {
   @UseGuards(RolesGuard)
   @Roles(Role.ADMIN)
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateSeatDto: UpdateSeatDto) {
-    return this.seatsService.update(+id, updateSeatDto);
+  update(
+    @UserId() userId: string,
+    @Param('id') id: string,
+    @Body() updateSeatDto: UpdateSeatDto,
+  ) {
+    return this.seatsService.update(userId, id, updateSeatDto);
   }
 
   @UseGuards(RolesGuard)

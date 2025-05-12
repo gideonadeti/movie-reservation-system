@@ -5,9 +5,10 @@ import { LoggingMiddleware } from './logging/logging.middleware';
 import { MoviesModule } from './movies/movies.module';
 import { ShowtimesModule } from './showtimes/showtimes.module';
 import { ReservationsModule } from './reservations/reservations.module';
+import { AuditoriumsModule } from './auditoriums/auditoriums.module';
 
 @Module({
-  imports: [AuthModule, MoviesModule, ShowtimesModule, ReservationsModule],
+  imports: [AuthModule, MoviesModule, ShowtimesModule, ReservationsModule, AuditoriumsModule],
   controllers: [],
   providers: [PrismaService],
 })

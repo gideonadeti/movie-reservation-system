@@ -33,8 +33,12 @@ export class SeatsService {
     }
   }
 
-  findAll() {
-    return `This action returns all seats`;
+  async findAll() {
+    try {
+      return await this.prismaService.seat.findMany();
+    } catch (error) {
+      this.handleError(error, 'fetch seats');
+    }
   }
 
   findOne(id: number) {

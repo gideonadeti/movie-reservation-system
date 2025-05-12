@@ -66,10 +66,10 @@ model Showtime {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  admin       User          @relation(fields: [adminId], references: [id], onDelete: Cascade)
-  movie       Movie         @relation(fields: [movieId], references: [id], onDelete: Cascade)
-  auditorium  Auditorium    @relation(fields: [auditoriumId], references: [id], onDelete: Cascade)
-  Reservation Reservation[]
+  admin        User          @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  movie        Movie         @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  auditorium   Auditorium    @relation(fields: [auditoriumId], references: [id], onDelete: Cascade)
+  reservations Reservation[]
 }
 
 model Auditorium {

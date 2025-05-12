@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -7,6 +8,7 @@ import {
 import { CreateSeatDto } from './dto/create-seat.dto';
 import { UpdateSeatDto } from './dto/update-seat.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { Prisma } from 'generated/prisma';
 
 @Injectable()
 export class SeatsService {
@@ -19,6 +21,11 @@ export class SeatsService {
 
     if (error instanceof BadRequestException) {
       throw error;
+    } else if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2002'
+    ) {
+      throw new ConflictException('Seat already exists');
     }
 
     throw new InternalServerErrorException(`Failed to ${action}`);

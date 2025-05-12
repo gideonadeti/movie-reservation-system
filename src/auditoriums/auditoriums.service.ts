@@ -25,8 +25,14 @@ export class AuditoriumsService {
     throw new InternalServerErrorException(`Failed to ${action}`);
   }
 
-  create(createAuditoriumDto: CreateAuditoriumDto) {
-    return 'This action adds a new auditorium';
+  async create(userId: string, createAuditoriumDto: CreateAuditoriumDto) {
+    try {
+      return await this.prismaService.auditorium.create({
+        data: { ...createAuditoriumDto, adminId: userId },
+      });
+    } catch (error) {
+      this.handleError(error, 'create auditorium');
+    }
   }
 
   findAll() {

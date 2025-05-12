@@ -59,8 +59,22 @@ export class AuditoriumsService {
     }
   }
 
-  update(id: number, updateAuditoriumDto: UpdateAuditoriumDto) {
-    return `This action updates a #${id} auditorium`;
+  async update(
+    userId: string,
+    id: string,
+    updateAuditoriumDto: UpdateAuditoriumDto,
+  ) {
+    try {
+      return await this.prismaService.auditorium.update({
+        where: {
+          id,
+          adminId: userId,
+        },
+        data: updateAuditoriumDto,
+      });
+    } catch (error) {
+      this.handleError(error, `update auditorium with id ${id}`);
+    }
   }
 
   remove(id: number) {

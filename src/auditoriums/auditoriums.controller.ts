@@ -50,10 +50,11 @@ export class AuditoriumsController {
   @Roles(Role.ADMIN)
   @Patch(':id')
   update(
+    @UserId() userId: string,
     @Param('id') id: string,
     @Body() updateAuditoriumDto: UpdateAuditoriumDto,
   ) {
-    return this.auditoriumsService.update(+id, updateAuditoriumDto);
+    return this.auditoriumsService.update(userId, id, updateAuditoriumDto);
   }
 
   @UseGuards(RolesGuard)

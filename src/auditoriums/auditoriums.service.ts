@@ -77,7 +77,16 @@ export class AuditoriumsService {
     }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} auditorium`;
+  async remove(userId: string, id: string) {
+    try {
+      return await this.prismaService.auditorium.delete({
+        where: {
+          id,
+          adminId: userId,
+        },
+      });
+    } catch (error) {
+      this.handleError(error, `delete auditorium with id ${id}`);
+    }
   }
 }

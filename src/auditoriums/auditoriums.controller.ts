@@ -60,7 +60,7 @@ export class AuditoriumsController {
   @UseGuards(RolesGuard)
   @Roles(Role.ADMIN)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.auditoriumsService.remove(+id);
+  remove(@UserId() userId: string, @Param('id') id: string) {
+    return this.auditoriumsService.remove(userId, id);
   }
 }

@@ -217,9 +217,9 @@ export class ReservationsService {
     }
   }
 
-  remove(userId: string, id: string) {
+  async remove(userId: string, id: string) {
     try {
-      return this.prismaService.reservation.delete({
+      return await this.prismaService.reservation.delete({
         where: {
           id,
           userId,

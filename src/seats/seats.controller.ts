@@ -43,9 +43,11 @@ export class SeatsController {
     return this.seatsService.findOne(id);
   }
 
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
   @Get(':id/reports')
-  findReports(@Param('id') id: string) {
-    return this.seatsService.findReports(id);
+  findReports(@UserId() userId: string, @Param('id') id: string) {
+    return this.seatsService.findReports(userId, id);
   }
 
   @UseGuards(RolesGuard)

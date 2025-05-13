@@ -46,6 +46,11 @@ export class AuditoriumsController {
     return this.auditoriumsService.findOne(id);
   }
 
+  @Get(':id/reports')
+  findReports(@Param('id') id: string) {
+    return this.auditoriumsService.findReports(id);
+  }
+
   @UseGuards(RolesGuard)
   @Roles(Role.ADMIN)
   @Patch(':id')

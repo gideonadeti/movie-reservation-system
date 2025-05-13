@@ -59,6 +59,31 @@ export class AuditoriumsService {
     }
   }
 
+  async findReports(id: string) {
+    try {
+      const auditorium = await this.prismaService.auditorium.findUnique({
+        where: { id },
+        include: {
+          seats: true,
+          showtimes: true,
+        },
+      });
+
+      if (!auditorium) {
+        throw new BadRequestException(`Auditorium with id ${id} not found`);
+      }
+
+      return {
+        name: auditorium.name,
+        capacity: auditorium.capacity,
+        numberOfSeats: auditorium.seats.length,
+        numberOfShowtimes: auditorium.showtimes.length,
+      };
+    } catch (error) {
+      this.handleError(error, `fetch reports for auditorium with id ${id}`);
+    }
+  }
+
   async update(
     userId: string,
     id: string,

@@ -122,17 +122,19 @@ export class MoviesService {
     }
   }
 
-  async findReports(id: string) {
+  async findReports(userId: string, id: string) {
     try {
       const movie = await this.prismaService.movie.findUnique({
-        where: { id },
+        where: { id, adminId: userId },
         include: {
           showtimes: true,
         },
       });
 
       if (!movie) {
-        throw new BadRequestException(`Movie with id ${id} not found`);
+        throw new BadRequestException(
+          `Failed to fetch reports for movie with ID ${id}`,
+        );
       }
 
       return {

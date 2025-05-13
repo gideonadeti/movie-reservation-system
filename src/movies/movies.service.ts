@@ -141,7 +141,7 @@ export class MoviesService {
         numberOfShowtimes: movie.showtimes.length,
       };
     } catch (error) {
-      this.handleError(error, `fetch movie with id ${id}`);
+      this.handleError(error, `fetch reports for movie with ID ${id}`);
     }
   }
 

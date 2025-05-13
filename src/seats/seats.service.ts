@@ -80,6 +80,30 @@ export class SeatsService {
     }
   }
 
+  async findReports(id: string) {
+    try {
+      const seat = await this.prismaService.seat.findUnique({
+        where: { id },
+        include: {
+          auditorium: true,
+          reservedSeats: true,
+        },
+      });
+
+      if (!seat) {
+        throw new BadRequestException(`Seat with id ${id} not found`);
+      }
+
+      return {
+        label: seat.label,
+        auditoriumName: seat.auditorium.name,
+        numberOfReservedSeats: seat.reservedSeats.length,
+      };
+    } catch (error) {
+      this.handleError(error, `fetch reports for seat with id ${id}`);
+    }
+  }
+
   async update(userId: string, id: string, updateSeatDto: UpdateSeatDto) {
     try {
       return await this.prismaService.seat.update({

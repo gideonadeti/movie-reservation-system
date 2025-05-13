@@ -48,9 +48,11 @@ export class ShowtimesController {
     return this.showtimesService.findOne(id);
   }
 
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
   @Get(':id/reports')
-  findReports(@Param('id') id: string) {
-    return this.showtimesService.findReports(id);
+  findReports(@UserId() userId: string, @Param('id') id: string) {
+    return this.showtimesService.findReports(userId, id);
   }
 
   @UseGuards(RolesGuard)

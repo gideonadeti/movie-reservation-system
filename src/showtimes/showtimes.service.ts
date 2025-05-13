@@ -175,10 +175,10 @@ export class ShowtimesService {
     }
   }
 
-  async findReports(id: string) {
+  async findReports(userId: string, id: string) {
     try {
       const showtime = await this.prismaService.showtime.findUnique({
-        where: { id },
+        where: { id, adminId: userId },
         include: {
           movie: true,
           auditorium: true,
@@ -187,7 +187,9 @@ export class ShowtimesService {
       });
 
       if (!showtime) {
-        throw new BadRequestException(`Showtime with id ${id} not found`);
+        throw new BadRequestException(
+          `Failed to fetch reports for showtime with ID ${id}`,
+        );
       }
 
       const numberOfReservations = showtime.reservations.length;

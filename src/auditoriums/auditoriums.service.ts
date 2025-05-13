@@ -59,10 +59,10 @@ export class AuditoriumsService {
     }
   }
 
-  async findReports(id: string) {
+  async findReports(userId: string, id: string) {
     try {
       const auditorium = await this.prismaService.auditorium.findUnique({
-        where: { id },
+        where: { id, adminId: userId },
         include: {
           seats: true,
           showtimes: true,
@@ -70,7 +70,9 @@ export class AuditoriumsService {
       });
 
       if (!auditorium) {
-        throw new BadRequestException(`Auditorium with id ${id} not found`);
+        throw new BadRequestException(
+          `Failed to fetch reports for auditorium with ID ${id}`,
+        );
       }
 
       return {

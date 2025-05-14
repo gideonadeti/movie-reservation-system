@@ -29,11 +29,14 @@ ENV NODE_ENV=${NODE_ENV}
 # Copy compiled dist from build stage
 COPY --from=build /usr/src/app/dist ./dist
 
+# Copy generated Prisma client from build stage
+COPY --from=build /usr/src/app/generated ./generated
+
 # Copy only necessary files for production
 COPY --from=build /usr/src/app/package*.json ./
 
 # Install production dependencies
-RUN npm install --only=production
+RUN npm install --omit=dev
 
 # Remove package*.json to reduce image size
 RUN rm package*.json

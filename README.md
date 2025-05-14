@@ -65,7 +65,7 @@ Swagger API docs will be available at:
 
 ## Live Deployment
 
-Check out the live API on [Render](#) <!-- Replace `#` with actual link -->
+Check out the live API on [Render](https://movie-reservation-system.onrender.com/api/documentation)
 
 ## Background
 

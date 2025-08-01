@@ -20,40 +20,38 @@ import { Roles } from 'src/roles/roles.decorator';
 import { Role } from 'generated/prisma';
 import { UserId } from 'src/user-id/user-id.decorator';
 import { FindAllMoviesDto } from './dto/find-all-movies.dto';
+import { Public } from 'src/auth/public.decorator';
 
 @ApiTags('Movies')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(Role.ADMIN)
 @Controller('movies')
 export class MoviesController {
   constructor(private readonly moviesService: MoviesService) {}
 
-  @UseGuards(RolesGuard)
-  @Roles(Role.ADMIN)
   @Post()
   create(@UserId() userId: string, @Body() createMovieDto: CreateMovieDto) {
     return this.moviesService.create(userId, createMovieDto);
   }
 
   @Get()
+  @Public()
   findAll(@Query() query: FindAllMoviesDto) {
     return this.moviesService.findAll(query);
   }
 
   @Get(':id')
+  @Public()
   findOne(@Param('id') id: string) {
     return this.moviesService.findOne(id);
   }
 
-  @UseGuards(RolesGuard)
-  @Roles(Role.ADMIN)
   @Get(':id/reports')
   findReports(@UserId() userId: string, @Param('id') id: string) {
     return this.moviesService.findReports(userId, id);
   }
 
-  @UseGuards(RolesGuard)
-  @Roles(Role.ADMIN)
   @Patch(':id')
   update(
     @UserId() userId: string,
@@ -63,8 +61,6 @@ export class MoviesController {
     return this.moviesService.update(userId, id, updateMovieDto);
   }
 
-  @UseGuards(RolesGuard)
-  @Roles(Role.ADMIN)
   @Delete(':id')
   remove(@UserId() userId: string, @Param('id') id: string) {
     return this.moviesService.remove(userId, id);

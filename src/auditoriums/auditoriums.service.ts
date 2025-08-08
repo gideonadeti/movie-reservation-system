@@ -10,6 +10,7 @@ import { CreateAuditoriumDto } from './dto/create-auditorium.dto';
 import { UpdateAuditoriumDto } from './dto/update-auditorium.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Prisma } from 'generated/prisma';
+import { FindAllAuditoriumsDto } from './dto/find-all-auditoriums.dto';
 
 @Injectable()
 export class AuditoriumsService {
@@ -32,6 +33,24 @@ export class AuditoriumsService {
     throw new InternalServerErrorException(`Failed to ${action}`);
   }
 
+  private getWhereConditions(query: FindAllAuditoriumsDto) {
+    const { name, minCapacity, maxCapacity } = query;
+    const whereConditions: Prisma.AuditoriumWhereInput = {};
+
+    if (name) {
+      whereConditions.name = { contains: name, mode: 'insensitive' };
+    }
+
+    if (minCapacity || maxCapacity) {
+      whereConditions.capacity = {};
+
+      if (minCapacity) whereConditions.capacity.gte = minCapacity;
+      if (maxCapacity) whereConditions.capacity.lte = maxCapacity;
+    }
+
+    return whereConditions;
+  }
+
   async create(userId: string, createAuditoriumDto: CreateAuditoriumDto) {
     try {
       return await this.prismaService.auditorium.create({
@@ -42,9 +61,43 @@ export class AuditoriumsService {
     }
   }
 
-  async findAll() {
+  async findAll(query: FindAllAuditoriumsDto) {
+    const { sortBy, order, limit, page } = query;
+    const whereConditions = this.getWhereConditions(query);
+
     try {
-      return await this.prismaService.auditorium.findMany();
+      if (!page && !limit) {
+        return await this.prismaService.auditorium.findMany({
+          where: whereConditions,
+          orderBy: { [sortBy || 'createdAt']: order || 'desc' },
+        });
+      }
+
+      const numberPage = page || 1;
+      const numberLimit = limit || 10;
+      const total = await this.prismaService.auditorium.count({
+        where: whereConditions,
+      });
+
+      const lastPage = Math.ceil(total / numberLimit);
+      const auditoriums = await this.prismaService.auditorium.findMany({
+        where: whereConditions,
+        orderBy: { [sortBy || 'createdAt']: order || 'desc' },
+        skip: (numberPage - 1) * numberLimit,
+        take: numberLimit,
+      });
+
+      return {
+        auditoriums,
+        metadata: {
+          total,
+          lastPage,
+          page: numberPage,
+          limit: numberLimit,
+          hasNextPage: numberPage < lastPage,
+          hasPreviousPage: numberPage > 1,
+        },
+      };
     } catch (error) {
       this.handleError(error, 'fetch auditoriums');
     }

@@ -8,6 +8,7 @@ import {
   Param,
   Delete,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 
 import { AuditoriumsService } from './auditoriums.service';
@@ -19,6 +20,7 @@ import { Roles } from 'src/roles/roles.decorator';
 import { Role } from 'generated/prisma';
 import { UserId } from 'src/user-id/user-id.decorator';
 import { Public } from 'src/auth/public.decorator';
+import { FindAllAuditoriumsDto } from './dto/find-all-auditoriums.dto';
 
 @ApiTags('Auditoriums')
 @ApiBearerAuth()
@@ -38,8 +40,8 @@ export class AuditoriumsController {
 
   @Get()
   @Public()
-  findAll() {
-    return this.auditoriumsService.findAll();
+  findAll(@Query() query: FindAllAuditoriumsDto) {
+    return this.auditoriumsService.findAll(query);
   }
 
   @Get(':id')

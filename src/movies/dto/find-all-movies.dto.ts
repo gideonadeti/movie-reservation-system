@@ -1,23 +1,23 @@
 import { IsIn, IsOptional, IsPositive, IsString } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { Trim } from 'src/trim/trim.decorator';
 
 export class FindAllMoviesDto {
   /** Movie's title */
   @IsOptional()
   @IsString()
-  @Transform(({ value }: { value: string }) => value.trim())
+  @Trim()
   title?: string;
 
   /** Movie's description */
   @IsOptional()
   @IsString()
-  @Transform(({ value }: { value: string }) => value.trim())
+  @Trim()
   description?: string;
 
   /** Movie's genre */
   @IsOptional()
   @IsString()
-  @Transform(({ value }: { value: string }) => value.trim())
+  @Trim()
   genre?: string;
 
   /** Sort by this field */

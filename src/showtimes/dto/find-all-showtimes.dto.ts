@@ -50,11 +50,6 @@ export class FindAllShowtimesDto {
   @IsUUID()
   auditoriumId?: string;
 
-  /** Filter by admin ID */
-  @IsOptional()
-  @IsUUID()
-  adminId?: string;
-
   /** Sort by this field */
   @IsOptional()
   @IsIn(['startTime', 'endTime', 'price', 'createdAt', 'updatedAt'])

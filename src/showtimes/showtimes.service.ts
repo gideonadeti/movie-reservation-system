@@ -29,7 +29,6 @@ export class ShowtimesService {
 
   private getWhereConditions(query: FindAllShowtimesDto) {
     const {
-      adminId,
       auditoriumId,
       endTimeFrom,
       endTimeTo,
@@ -40,10 +39,6 @@ export class ShowtimesService {
       startTimeTo,
     } = query;
     const whereConditions: Prisma.ShowtimeWhereInput = {};
-
-    if (adminId) {
-      whereConditions.adminId = adminId;
-    }
 
     if (auditoriumId) {
       whereConditions.auditoriumId = auditoriumId;

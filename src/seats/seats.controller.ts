@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 
 import { SeatsService } from './seats.service';
@@ -19,6 +20,7 @@ import { Roles } from 'src/roles/roles.decorator';
 import { Role } from 'generated/prisma';
 import { UserId } from 'src/user-id/user-id.decorator';
 import { Public } from 'src/auth/public.decorator';
+import { FindAllSeatsDto } from './dto/find-all-seats.dto';
 
 @ApiTags('Seats')
 @ApiBearerAuth()
@@ -35,8 +37,8 @@ export class SeatsController {
 
   @Get()
   @Public()
-  findAll() {
-    return this.seatsService.findAll();
+  findAll(@Query() query: FindAllSeatsDto) {
+    return this.seatsService.findAll(query);
   }
 
   @Get(':id')

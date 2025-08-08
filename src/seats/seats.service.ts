@@ -9,6 +9,7 @@ import { CreateSeatDto } from './dto/create-seat.dto';
 import { UpdateSeatDto } from './dto/update-seat.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Prisma } from 'generated/prisma';
+import { FindAllSeatsDto } from './dto/find-all-seats.dto';
 
 @Injectable()
 export class SeatsService {
@@ -30,6 +31,18 @@ export class SeatsService {
 
     throw new InternalServerErrorException(`Failed to ${action}`);
   }
+
+  private getWhereConditions(query: FindAllSeatsDto) {
+    const { label } = query;
+    const whereConditions: Prisma.SeatWhereInput = {};
+
+    if (label) {
+      whereConditions.label = { contains: label, mode: 'insensitive' };
+    }
+
+    return whereConditions;
+  }
+
   async create(userId: string, createSeatDto: CreateSeatDto) {
     const { auditoriumId } = createSeatDto;
 
@@ -64,9 +77,43 @@ export class SeatsService {
     }
   }
 
-  async findAll() {
+  async findAll(query: FindAllSeatsDto) {
+    const { sortBy, order, limit, page } = query;
+    const whereConditions = this.getWhereConditions(query);
+
     try {
-      return await this.prismaService.seat.findMany();
+      if (!page && !limit) {
+        return await this.prismaService.seat.findMany({
+          where: whereConditions,
+          orderBy: { [sortBy || 'createdAt']: order || 'desc' },
+        });
+      }
+
+      const numberPage = page || 1;
+      const numberLimit = limit || 10;
+      const total = await this.prismaService.seat.count({
+        where: whereConditions,
+      });
+
+      const lastPage = Math.ceil(total / numberLimit);
+      const seats = await this.prismaService.seat.findMany({
+        where: whereConditions,
+        orderBy: { [sortBy || 'createdAt']: order || 'desc' },
+        skip: (numberPage - 1) * numberLimit,
+        take: numberLimit,
+      });
+
+      return {
+        seats,
+        metadata: {
+          total,
+          lastPage,
+          page: numberPage,
+          limit: numberLimit,
+          hasNextPage: numberPage < lastPage,
+          hasPreviousPage: numberPage > 1,
+        },
+      };
     } catch (error) {
       this.handleError(error, 'fetch seats');
     }

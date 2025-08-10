@@ -71,6 +71,7 @@ export class ShowtimesService {
 
     return whereConditions;
   }
+
   async create(userId: string, createShowtimeDto: CreateShowtimeDto) {
     const { startTime, endTime, auditoriumId } = createShowtimeDto;
 
@@ -209,7 +210,38 @@ export class ShowtimesService {
     id: string,
     updateShowtimeDto: UpdateShowtimeDto,
   ) {
+    const { startTime, endTime, auditoriumId } = updateShowtimeDto;
+
+    if (startTime && endTime && startTime > endTime) {
+      throw new BadRequestException('Start time must be before end time');
+    }
+
+    if (startTime && startTime < new Date()) {
+      throw new BadRequestException('Start time must be in the future');
+    }
+
     try {
+      if (startTime && endTime && auditoriumId) {
+        const overlap = await this.prismaService.showtime.findFirst({
+          where: {
+            auditoriumId: auditoriumId,
+            startTime: {
+              lt: endTime,
+            },
+            endTime: {
+              gt: startTime,
+            },
+            NOT: { id },
+          },
+        });
+
+        if (overlap) {
+          throw new BadRequestException(
+            'The auditorium is unavailable during this period',
+          );
+        }
+      }
+
       return await this.prismaService.showtime.update({
         where: {
           id,

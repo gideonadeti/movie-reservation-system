@@ -265,10 +265,6 @@ export class ShowtimesService {
           id,
           adminId: userId,
         },
-        include: {
-          movie: true,
-          auditorium: true,
-        },
       });
     } catch (error) {
       this.handleError(error, `delete showtime with id ${id}`);

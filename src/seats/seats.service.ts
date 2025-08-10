@@ -33,11 +33,15 @@ export class SeatsService {
   }
 
   private getWhereConditions(query: FindAllSeatsDto) {
-    const { label } = query;
+    const { label, auditoriumId } = query;
     const whereConditions: Prisma.SeatWhereInput = {};
 
     if (label) {
       whereConditions.label = { contains: label, mode: 'insensitive' };
+    }
+
+    if (auditoriumId) {
+      whereConditions.auditoriumId = auditoriumId;
     }
 
     return whereConditions;

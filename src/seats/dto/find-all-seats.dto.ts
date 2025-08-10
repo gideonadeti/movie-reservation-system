@@ -9,6 +9,11 @@ export class FindAllSeatsDto {
   @Trim()
   label?: string;
 
+  /** Auditorium ID */
+  @IsOptional()
+  @IsString()
+  auditoriumId?: string;
+
   /** Sort by this field */
   @IsOptional()
   @IsIn(['label', 'createdAt', 'updatedAt'])

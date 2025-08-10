@@ -39,6 +39,12 @@ export class ReservationsService {
       throw new BadRequestException(`Showtime with ID ${showtimeId} not found`);
     }
 
+    if (showtime.startTime < new Date()) {
+      throw new BadRequestException(
+        'Cannot reserve seats for a showtime that has already started',
+      );
+    }
+
     return showtime;
   }
 
@@ -200,6 +206,7 @@ export class ReservationsService {
     id: string,
     updateReservationDto: UpdateReservationDto,
   ) {
+    // eslint-disable-next-line prefer-const
     let { showtimeId, seatIds, status } = updateReservationDto;
 
     try {

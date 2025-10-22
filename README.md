@@ -1,6 +1,6 @@
 # Movie Reservation System
 
-A backend system that allows users to reserve movie tickets and manage them.
+A backend system that allows users to authenticate, browse movies, reserve seats for specific showtimes, and manage their reservations.
 
 ## Features
 

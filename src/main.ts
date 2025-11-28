@@ -23,7 +23,6 @@ async function bootstrap() {
   app.enableCors({
     origin: frontendOrigin,
     credentials: true,
-    allowedHeaders: ['x-csrf-token'],
   });
 
   app.useGlobalPipes(

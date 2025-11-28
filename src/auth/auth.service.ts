@@ -1,6 +1,6 @@
 import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
-import { Request, Response } from 'express';
+import { CookieOptions, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import {
   ConflictException,
@@ -15,20 +15,14 @@ import { Prisma, User } from '@prisma/client';
 import { SignUpDto } from './dto/sign-up.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { AuthPayload } from './auth-payload.interface';
-
-const REFRESH_COOKIE_CONFIG = {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: 'strict' as const,
-  path: '/auth/refresh',
-  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-};
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
   constructor(
     private jwtService: JwtService,
     private prismaService: PrismaService,
+    private configService: ConfigService,
   ) {}
 
   private logger = new Logger(AuthService.name);
@@ -62,7 +56,7 @@ export class AuthService {
       });
     }
 
-    res.cookie('refreshToken', refreshToken, REFRESH_COOKIE_CONFIG);
+    res.cookie('refreshToken', refreshToken, this.getRefreshCookieConfig());
 
     return accessToken;
   }
@@ -101,6 +95,45 @@ export class AuthService {
     return bcrypt.hash(password, salt);
   }
 
+  private getRefreshCookieConfig(): CookieOptions {
+    const nodeEnv =
+      this.configService.get<string>('NODE_ENV') ?? process.env.NODE_ENV;
+    const isProd = nodeEnv === 'production';
+
+    return {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: (isProd ? 'none' : 'lax') as CookieOptions['sameSite'],
+      path: '/auth/refresh',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    };
+  }
+
+  private validateRefreshCsrfToken(req: Request) {
+    const headerName =
+      this.configService.get<string>('REFRESH_CSRF_HEADER_NAME') ??
+      'x-refresh-csrf-token';
+
+    const expectedSecret = this.configService.get<string>(
+      'REFRESH_CSRF_SECRET',
+    );
+
+    if (!expectedSecret) {
+      this.logger.warn(
+        'REFRESH_CSRF_SECRET is not configured. Skipping refresh CSRF validation.',
+      );
+
+      return;
+    }
+
+    const headerKey = headerName.toLowerCase();
+    const incomingToken = req.headers[headerKey] as string | undefined;
+
+    if (!incomingToken || incomingToken !== expectedSecret) {
+      throw new UnauthorizedException('Invalid CSRF token');
+    }
+  }
+
   async signUp(signUpDto: SignUpDto, res: Response) {
     try {
       const hashedPassword = await this.hashPassword(signUpDto.password);
@@ -133,6 +166,8 @@ export class AuthService {
   }
 
   async refresh(req: Request, res: Response) {
+    this.validateRefreshCsrfToken(req);
+
     const user = req.user as Partial<User>;
     const refreshTokenFromCookie = (req.cookies as { refreshToken?: string })
       ?.refreshToken;

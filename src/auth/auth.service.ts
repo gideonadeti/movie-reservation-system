@@ -204,7 +204,8 @@ export class AuthService {
 
   async signOut(user: Partial<User>, res: Response) {
     try {
-      await this.prismaService.refreshToken.delete({
+      // Use deleteMany so it doesn't throw an error if the user has no refresh token, thus has already signed out
+      await this.prismaService.refreshToken.deleteMany({
         where: { userId: user.id },
       });
 

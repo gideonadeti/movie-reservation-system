@@ -5,12 +5,26 @@ import {
   SwaggerDocumentOptions,
   SwaggerModule,
 } from '@nestjs/swagger';
+import { ConfigService } from '@nestjs/config';
 
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const configService = app.get(ConfigService);
+
+  // CORS configuration - only allow the frontend origin
+  const frontendOrigin = configService.get<string>(
+    'CORS_ORIGIN',
+    'http://localhost:3001',
+  );
+
+  app.enableCors({
+    origin: frontendOrigin,
+    credentials: true,
+    allowedHeaders: ['x-csrf-token'],
+  });
 
   app.useGlobalPipes(
     new ValidationPipe({

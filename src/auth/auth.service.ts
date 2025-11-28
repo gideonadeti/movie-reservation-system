@@ -1,9 +1,10 @@
 import * as bcrypt from 'bcryptjs';
+import * as crypto from 'crypto';
 import { JwtService } from '@nestjs/jwt';
 import { CookieOptions, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { ConfigService } from '@nestjs/config';
-import { Prisma, User } from '@prisma/client';
+import { PasswordResetToken, Prisma, User } from '@prisma/client';
 import {
   ConflictException,
   Injectable,
@@ -15,6 +16,7 @@ import {
 import { SignUpDto } from './dto/sign-up.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { AuthPayload } from './auth-payload.interface';
+import { EmailService } from 'src/email/email.service';
 
 @Injectable()
 export class AuthService {
@@ -22,6 +24,7 @@ export class AuthService {
     private jwtService: JwtService,
     private prismaService: PrismaService,
     private configService: ConfigService,
+    private emailService: EmailService,
   ) {}
 
   private logger = new Logger(AuthService.name);
@@ -60,7 +63,7 @@ export class AuthService {
     return accessToken;
   }
 
-  private handleAuthError(error: any, action: string) {
+  private handleError(error: any, action: string) {
     this.logger.error(`Failed to ${action}`, (error as Error).stack);
 
     if (error instanceof UnauthorizedException) {
@@ -132,7 +135,7 @@ export class AuthService {
 
       res.status(201).json({ accessToken, user: rest });
     } catch (error) {
-      this.handleAuthError(error, 'sign up user');
+      this.handleError(error, 'sign up user');
     }
   }
 
@@ -142,7 +145,7 @@ export class AuthService {
 
       res.status(200).json({ accessToken, user });
     } catch (error) {
-      this.handleAuthError(error, 'sign in user');
+      this.handleError(error, 'sign in user');
     }
   }
 
@@ -177,7 +180,7 @@ export class AuthService {
       const accessToken = await this.handleSuccessfulAuth(user, res);
       res.json({ accessToken });
     } catch (error) {
-      this.handleAuthError(error, 'refresh token');
+      this.handleError(error, 'refresh token');
     }
   }
 
@@ -191,7 +194,7 @@ export class AuthService {
       res.clearCookie('refreshToken', this.getRefreshCookieConfig());
       res.sendStatus(200);
     } catch (error) {
-      this.handleAuthError(error, 'sign out user');
+      this.handleError(error, 'sign out user');
     }
   }
 
@@ -210,5 +213,123 @@ export class AuthService {
     const { password, ...rest } = user;
 
     return rest;
+  }
+
+  async forgotPassword(email: string) {
+    try {
+      const user = await this.prismaService.user.findUnique({
+        where: { email },
+      });
+
+      // Always return success for security (don't reveal if email exists)
+      if (!user) {
+        this.logger.log(
+          `Password reset requested for non-existent email: ${email}`,
+        );
+
+        return; // Don't throw - silently return to prevent email enumeration
+      }
+
+      // Generate secure token
+      const token = crypto.randomBytes(32).toString('hex');
+      const hashedToken = await bcrypt.hash(token, 10);
+
+      // Set expiry to 1 hour from now
+      const expiresAt = new Date();
+
+      expiresAt.setHours(expiresAt.getHours() + 1);
+
+      // Update or create reset token
+      const existingToken =
+        await this.prismaService.passwordResetToken.findUnique({
+          where: { userId: user.id },
+        });
+
+      if (existingToken) {
+        await this.prismaService.passwordResetToken.update({
+          where: { userId: user.id },
+          data: {
+            token: hashedToken,
+            expiresAt,
+            used: false, // Reset used flag
+          },
+        });
+      } else {
+        await this.prismaService.passwordResetToken.create({
+          data: {
+            userId: user.id,
+            token: hashedToken,
+            expiresAt,
+          },
+        });
+      }
+
+      // Send email with reset link
+      await this.emailService.sendPasswordResetEmail(email, token);
+
+      this.logger.log(`Password reset email sent to ${email}`);
+    } catch (error) {
+      this.logger.error(
+        `Failed to process password reset request for ${email}`,
+        (error as Error).stack,
+      );
+      // Don't throw - always return success to prevent email enumeration
+    }
+  }
+
+  async resetPassword(token: string, newPassword: string) {
+    try {
+      // Find all unused, unexpired reset tokens and check them (since tokens are hashed)
+      const resetTokens = await this.prismaService.passwordResetToken.findMany({
+        where: {
+          used: false,
+          expiresAt: {
+            gt: new Date(),
+          },
+        },
+      });
+
+      let validToken: PasswordResetToken | null = null;
+
+      for (const resetToken of resetTokens) {
+        const isMatch = await bcrypt.compare(token, resetToken.token);
+
+        if (isMatch) {
+          validToken = resetToken;
+
+          break;
+        }
+      }
+
+      if (!validToken) {
+        throw new UnauthorizedException('Invalid or expired reset token');
+      }
+
+      // Hash new password
+      const hashedPassword = await this.hashPassword(newPassword);
+
+      // Update user password
+      await this.prismaService.user.update({
+        where: { id: validToken.userId },
+        data: { password: hashedPassword },
+      });
+
+      // Mark token as used (one-to-one relationship) - provides audit trail and security monitoring
+      await this.prismaService.passwordResetToken.update({
+        where: { userId: validToken.userId },
+        data: { used: true },
+      });
+
+      // Invalidate all refresh tokens for this user
+      await this.prismaService.refreshToken.deleteMany({
+        where: { userId: validToken.userId },
+      });
+
+      this.logger.log(
+        `Password reset successful for user ${validToken.userId}`,
+      );
+    } catch (error) {
+      this.handleError(error, 'reset password');
+    }
   }
 }

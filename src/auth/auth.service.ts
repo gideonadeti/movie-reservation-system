@@ -28,7 +28,7 @@ export class AuthService {
 
   /**
    * Generates access & refresh tokens, persists the hashed refresh token,
-   * sets the refresh cookie, and returns the new access token.
+   * sets the refresh cookie and CSRF token cookie, and returns the new access token.
    *
    * The caller is responsible for shaping the HTTP response body.
    */
@@ -56,6 +56,10 @@ export class AuthService {
     }
 
     res.cookie('refreshToken', refreshToken, this.getRefreshCookieConfig());
+
+    // Set CSRF token cookie for double-submit pattern
+    const csrfToken = uuidv4();
+    res.cookie('csrf-token', csrfToken, this.getCsrfCookieConfig());
 
     return accessToken;
   }
@@ -115,27 +119,40 @@ export class AuthService {
     };
   }
 
+  private getCsrfCookieConfig(): CookieOptions {
+    const nodeEnv =
+      this.configService.get<string>('NODE_ENV') ?? process.env.NODE_ENV;
+    const isProd = nodeEnv === 'production';
+
+    return {
+      httpOnly: false, // Must be readable by JavaScript for double-submit pattern
+      secure: isProd,
+      sameSite: (isProd ? 'none' : 'lax') as CookieOptions['sameSite'],
+      path: '/',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days (matches refresh token)
+    };
+  }
+
+  /**
+   * Validates CSRF token using double-submit cookie pattern.
+   * Compares the CSRF token from cookie with the token sent in header.
+   */
   private validateRefreshCsrfToken(req: Request) {
     const headerName =
       this.configService.get<string>('REFRESH_CSRF_HEADER_NAME') ??
-      'x-refresh-csrf-token';
+      'x-csrf-token';
 
-    const expectedSecret = this.configService.get<string>(
-      'REFRESH_CSRF_SECRET',
-    );
+    const cookieToken = (req.cookies as { 'csrf-token'?: string })[
+      'csrf-token'
+    ];
+    const headerKey = headerName.toLowerCase();
+    const headerToken = req.headers[headerKey] as string | undefined;
 
-    if (!expectedSecret) {
-      this.logger.warn(
-        'REFRESH_CSRF_SECRET is not configured. Skipping refresh CSRF validation.',
-      );
-
-      return;
+    if (!cookieToken || !headerToken) {
+      throw new UnauthorizedException('Missing CSRF token');
     }
 
-    const headerKey = headerName.toLowerCase();
-    const incomingToken = req.headers[headerKey] as string | undefined;
-
-    if (!incomingToken || incomingToken !== expectedSecret) {
+    if (cookieToken !== headerToken) {
       throw new UnauthorizedException('Invalid CSRF token');
     }
   }
@@ -216,6 +233,7 @@ export class AuthService {
       });
 
       res.clearCookie('refreshToken', this.getRefreshCookieConfig());
+      res.clearCookie('csrf-token', this.getCsrfCookieConfig());
       res.sendStatus(200);
     } catch (error) {
       this.handleAuthError(error, 'sign out user');

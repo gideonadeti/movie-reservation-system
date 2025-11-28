@@ -76,16 +76,24 @@ async function markFavorite(movie: MovieResult): Promise<void> {
 
 async function run(): Promise<void> {
   try {
-    console.log('Fetching top rated movies (pages 1 & 2)...');
-    const pages = await Promise.all([1, 2].map((page) => fetchTopRated(page)));
-    const movies = pages.flat();
+    const TARGET_COUNT = 88;
+    const MOVIES_PER_PAGE = 20;
+    const pagesNeeded = Math.ceil(TARGET_COUNT / MOVIES_PER_PAGE);
+
+    console.log(
+      `Fetching top rated movies (pages 1 - ${pagesNeeded}) to reach ${TARGET_COUNT} titles...`,
+    );
+    const pages = await Promise.all(
+      Array.from({ length: pagesNeeded }, (_, idx) => fetchTopRated(idx + 1)),
+    );
+    const movies = pages.flat().slice(0, TARGET_COUNT);
 
     console.log(`Retrieved ${movies.length} movies. Marking as favorites...`);
     for (const movie of movies) {
       await markFavorite(movie);
     }
 
-    console.log('All movies from page 1 & 2 have been marked as favorites.');
+    console.log(`${movies.length} movies have been marked as favorites.`);
   } catch (error) {
     console.error(error);
     process.exitCode = 1;

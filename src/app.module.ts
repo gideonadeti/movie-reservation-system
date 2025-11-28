@@ -1,4 +1,6 @@
 import { MiddlewareConsumer, Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+
 import { PrismaService } from './prisma/prisma.service';
 import { AuthModule } from './auth/auth.module';
 import { LoggingMiddleware } from './logging/logging.middleware';
@@ -9,7 +11,17 @@ import { AuditoriumsModule } from './auditoriums/auditoriums.module';
 import { SeatsModule } from './seats/seats.module';
 
 @Module({
-  imports: [AuthModule, MoviesModule, ShowtimesModule, ReservationsModule, AuditoriumsModule, SeatsModule],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    AuthModule,
+    MoviesModule,
+    ShowtimesModule,
+    ReservationsModule,
+    AuditoriumsModule,
+    SeatsModule,
+  ],
   controllers: [],
   providers: [PrismaService],
 })

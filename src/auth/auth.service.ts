@@ -198,6 +198,33 @@ export class AuthService {
     }
   }
 
+  async deleteAccount(user: Partial<User>, res: Response) {
+    try {
+      const userId = user.id as string;
+
+      // Delete refresh tokens
+      await this.prismaService.refreshToken.deleteMany({
+        where: { userId },
+      });
+
+      // Delete password reset tokens
+      await this.prismaService.passwordResetToken.deleteMany({
+        where: { userId },
+      });
+
+      // Delete user (cascades will handle related records)
+      await this.prismaService.user.delete({
+        where: { id: userId },
+      });
+
+      // Clear cookies
+      res.clearCookie('refreshToken', this.getRefreshCookieConfig());
+      res.sendStatus(200);
+    } catch (error) {
+      this.handleError(error, 'delete account');
+    }
+  }
+
   async validateUser(email: string, pass: string) {
     const user = await this.prismaService.user.findUnique({
       where: { email },

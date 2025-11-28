@@ -60,4 +60,14 @@ export class AuthController {
       resetPasswordDto.password,
     );
   }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post('delete-account')
+  async deleteAccount(
+    @Req() req: Request & { user: Partial<User> },
+    @Res() res: Response,
+  ) {
+    return this.authService.deleteAccount(req.user, res);
+  }
 }

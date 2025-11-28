@@ -33,11 +33,13 @@ export class AuthService {
 
   private logger = new Logger(AuthService.name);
 
-  private async handleSuccessfulAuth(
-    user: Partial<User>,
-    res: Response,
-    statusCode: number = 200,
-  ) {
+  /**
+   * Generates access & refresh tokens, persists the hashed refresh token,
+   * sets the refresh cookie, and returns the new access token.
+   *
+   * The caller is responsible for shaping the HTTP response body.
+   */
+  private async handleSuccessfulAuth(user: Partial<User>, res: Response) {
     const payload = this.createAuthPayload(user) as AuthPayload;
     const accessToken = this.getToken(payload, 'access');
     const refreshToken = this.getToken(payload, 'refresh');
@@ -61,7 +63,8 @@ export class AuthService {
     }
 
     res.cookie('refreshToken', refreshToken, REFRESH_COOKIE_CONFIG);
-    res.status(statusCode).json({ accessToken, user });
+
+    return accessToken;
   }
 
   private handleAuthError(error: any, action: string) {
@@ -111,7 +114,9 @@ export class AuthService {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password, ...rest } = user;
 
-      await this.handleSuccessfulAuth(rest, res, 201);
+      const accessToken = await this.handleSuccessfulAuth(rest, res);
+
+      res.status(201).json({ accessToken, user: rest });
     } catch (error) {
       this.handleAuthError(error, 'sign up user');
     }
@@ -119,7 +124,9 @@ export class AuthService {
 
   async signIn(user: Partial<User>, res: Response) {
     try {
-      await this.handleSuccessfulAuth(user, res);
+      const accessToken = await this.handleSuccessfulAuth(user, res);
+
+      res.status(200).json({ accessToken, user });
     } catch (error) {
       this.handleAuthError(error, 'sign in user');
     }
@@ -127,9 +134,12 @@ export class AuthService {
 
   async refresh(req: Request, res: Response) {
     const user = req.user as Partial<User>;
-    const refreshTokenFromCookie = (req.cookies as { refreshToken: string })[
-      'refreshToken'
-    ];
+    const refreshTokenFromCookie = (req.cookies as { refreshToken?: string })
+      ?.refreshToken;
+
+    if (!refreshTokenFromCookie) {
+      throw new UnauthorizedException('Missing refresh token');
+    }
 
     try {
       const existingRefreshToken =
@@ -150,9 +160,7 @@ export class AuthService {
         throw new UnauthorizedException('Invalid refresh token');
       }
 
-      const payload = this.createAuthPayload(user) as AuthPayload;
-      const accessToken = this.getToken(payload, 'access');
-
+      const accessToken = await this.handleSuccessfulAuth(user, res);
       res.json({ accessToken });
     } catch (error) {
       this.handleAuthError(error, 'refresh token');

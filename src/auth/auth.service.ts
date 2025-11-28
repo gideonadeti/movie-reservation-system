@@ -2,6 +2,8 @@ import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { CookieOptions, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
+import { ConfigService } from '@nestjs/config';
+import { Prisma, User } from '@prisma/client';
 import {
   ConflictException,
   Injectable,
@@ -10,12 +12,9 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 
-import { jwtConstants } from './jwt.constants';
-import { Prisma, User } from '@prisma/client';
 import { SignUpDto } from './dto/sign-up.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { AuthPayload } from './auth-payload.interface';
-import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
@@ -81,12 +80,19 @@ export class AuthService {
   }
 
   private getToken(payload: AuthPayload, type: 'access' | 'refresh') {
-    return this.jwtService.sign(payload, {
-      ...(type === 'refresh' && {
-        secret: jwtConstants.refreshSecret,
+    if (type === 'refresh') {
+      const secret =
+        this.configService.get<string>('JWT_REFRESH_SECRET') ??
+        process.env.JWT_REFRESH_SECRET;
+
+      return this.jwtService.sign(payload, {
+        secret,
         expiresIn: '7d',
-      }),
-    });
+      });
+    }
+
+    // Access tokens use the default secret configured in JwtModule
+    return this.jwtService.sign(payload);
   }
 
   private async hashPassword(password: string): Promise<string> {

@@ -9,7 +9,7 @@ import { CreateShowtimeDto } from './dto/create-showtime.dto';
 import { UpdateShowtimeDto } from './dto/update-showtime.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { FindAllShowtimesDto } from './dto/find-all-showtimes.dto';
-import { Prisma } from 'generated/prisma';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class ShowtimesService {

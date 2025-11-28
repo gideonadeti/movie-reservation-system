@@ -8,7 +8,7 @@ import {
 import { CreateSeatDto } from './dto/create-seat.dto';
 import { UpdateSeatDto } from './dto/update-seat.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Prisma } from 'generated/prisma';
+import { Prisma } from '@prisma/client';
 import { FindAllSeatsDto } from './dto/find-all-seats.dto';
 
 @Injectable()

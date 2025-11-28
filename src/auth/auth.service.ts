@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 
 import { jwtConstants } from './jwt.constants';
-import { Prisma, User } from 'generated/prisma';
+import { Prisma, User } from '@prisma/client';
 import { SignUpDto } from './dto/sign-up.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { AuthPayload } from './auth-payload.interface';

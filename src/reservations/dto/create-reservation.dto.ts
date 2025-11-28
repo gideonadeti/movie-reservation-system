@@ -8,7 +8,7 @@ import {
   IsIn,
 } from 'class-validator';
 
-import { ReservationStatus } from 'generated/prisma';
+import { ReservationStatus } from '@prisma/client';
 
 export class CreateReservationDto {
   /**

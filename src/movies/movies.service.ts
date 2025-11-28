@@ -9,7 +9,7 @@ import {
 import { CreateMovieDto } from './dto/create-movie.dto';
 import { UpdateMovieDto } from './dto/update-movie.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Prisma } from 'generated/prisma';
+import { Prisma } from '@prisma/client';
 import { FindAllMoviesDto } from './dto/find-all-movies.dto';
 
 @Injectable()

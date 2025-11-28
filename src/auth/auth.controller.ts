@@ -8,7 +8,7 @@ import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './local-auth.guard';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { RefreshJwtAuthGuard } from './refresh-jwt-auth.guard';
-import { User } from 'generated/prisma';
+import { User } from '@prisma/client';
 
 @ApiTags('Auth')
 @Controller('auth')

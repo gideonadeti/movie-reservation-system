@@ -9,7 +9,7 @@ import {
 import { CreateAuditoriumDto } from './dto/create-auditorium.dto';
 import { UpdateAuditoriumDto } from './dto/update-auditorium.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Prisma } from 'generated/prisma';
+import { Prisma } from '@prisma/client';
 import { FindAllAuditoriumsDto } from './dto/find-all-auditoriums.dto';
 
 @Injectable()

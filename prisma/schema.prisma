@@ -17,12 +17,13 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  refreshToken RefreshToken?
-  movies       Movie[]
-  showtimes    Showtime[]
-  Reservation  Reservation[]
-  auditoriums  Auditorium[]
-  seats        Seat[]
+  refreshToken       RefreshToken?
+  passwordResetToken PasswordResetToken?
+  movies             Movie[]
+  showtimes          Showtime[]
+  Reservation        Reservation[]
+  auditoriums        Auditorium[]
+  seats              Seat[]
 }
 
 enum Role {
@@ -126,4 +127,17 @@ model ReservedSeat {
 
   seat        Seat        @relation(fields: [seatId], references: [id], onDelete: Cascade)
   reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
 }

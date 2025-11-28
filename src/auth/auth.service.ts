@@ -208,12 +208,7 @@ export class AuthService {
         where: { userId: user.id },
       });
 
-      res.clearCookie('refreshToken', {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        path: '/auth/refresh',
-      });
+      res.clearCookie('refreshToken', this.getRefreshCookieConfig());
       res.sendStatus(200);
     } catch (error) {
       this.handleAuthError(error, 'sign out user');

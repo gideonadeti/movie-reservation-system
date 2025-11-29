@@ -1,8 +1,11 @@
 import { Role } from '@prisma/client';
 
 export interface AuthPayload {
-  email: string;
   sub: string;
+  name: string;
+  email: string;
   role: Role;
+  createdAt: Date;
+  updatedAt: Date;
   jti: string;
 }

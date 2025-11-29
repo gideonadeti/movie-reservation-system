@@ -358,7 +358,7 @@ export class AuthService {
       });
 
       this.logger.log(
-        `Password reset successful for user ${validToken.userId}`,
+        `Password reset successful for user with ID ${validToken.userId}`,
       );
     } catch (error) {
       this.handleError(error, 'reset password');

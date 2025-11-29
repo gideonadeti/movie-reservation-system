@@ -27,8 +27,6 @@ export class RefreshJwtStrategy extends PassportStrategy(
       email: payload.email,
       role: payload.role,
       name: payload.name,
-      createdAt: payload.createdAt,
-      updatedAt: payload.updatedAt,
     };
   }
 }

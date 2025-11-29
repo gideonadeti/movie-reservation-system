@@ -34,7 +34,8 @@ export class EmailService {
     }
 
     const frontendUrl =
-      this.configService.get<string>('CORS_ORIGIN') || 'http://localhost:3001';
+      this.configService.get<string>('FRONTEND_BASE_URL') ||
+      'http://localhost:3001';
     const fromEmail = 'gideonadeti0@gmail.com';
 
     const resetLink = `${frontendUrl}/reset-password?token=${token}`;

@@ -18,11 +18,19 @@ async function bootstrap() {
     'http://localhost:3001',
   );
 
+  // 1. Set the global prefix to the API version
+  app.setGlobalPrefix('api/v1');
+
+  // 2. Enable CORS
   app.enableCors({
     origin: frontendBaseUrl,
     credentials: true,
   });
 
+  // 3. Apply middlewares
+  app.use(cookieParser());
+
+  // 4. Apply global pipes
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -34,19 +42,11 @@ async function bootstrap() {
     }),
   );
 
-  app.use(cookieParser());
-
   const config = new DocumentBuilder()
     .setTitle('Movie Reservation System')
     .setDescription('A system that allows users to reserve movie tickets')
-    .setVersion('1.0.0')
+    .setVersion('1.0.1')
     .addBearerAuth()
-    .addTag('Auth')
-    .addTag('Movies')
-    .addTag('Showtimes')
-    .addTag('Reservations')
-    .addTag('Auditoriums')
-    .addTag('Seats')
     .build();
   const options: SwaggerDocumentOptions = {
     operationIdFactory: (_controllerKey: string, methodKey: string) =>
@@ -55,7 +55,7 @@ async function bootstrap() {
   const documentFactory = () =>
     SwaggerModule.createDocument(app, config, options);
 
-  SwaggerModule.setup('api/documentation', app, documentFactory);
+  SwaggerModule.setup('api/v1/documentation', app, documentFactory);
 
   await app.listen(process.env.PORT ?? 3000);
 }

@@ -4,7 +4,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Request } from 'express';
 import { ConfigService } from '@nestjs/config';
 
-import { Role } from '@prisma/client';
+import { AuthPayload } from './auth-payload.interface';
 
 @Injectable()
 export class RefreshJwtStrategy extends PassportStrategy(
@@ -21,7 +21,14 @@ export class RefreshJwtStrategy extends PassportStrategy(
     });
   }
 
-  validate(payload: { sub: string; email: string; role: Role }) {
-    return { id: payload.sub, email: payload.email, role: payload.role };
+  validate(payload: AuthPayload) {
+    return {
+      id: payload.sub,
+      email: payload.email,
+      role: payload.role,
+      name: payload.name,
+      createdAt: payload.createdAt,
+      updatedAt: payload.updatedAt,
+    };
   }
 }

@@ -31,11 +31,13 @@ export class AuthService {
 
   /**
    * Generates access & refresh tokens, persists the hashed refresh token,
-   * sets the refresh cookie, and returns the new access token.
-   *
-   * The caller is responsible for shaping the HTTP response body.
+   * sets the refresh cookie, and sends the response.
    */
-  private async handleSuccessfulAuth(user: Partial<User>, res: Response) {
+  private async handleSuccessfulAuth(
+    user: Partial<User>,
+    res: Response,
+    statusCode: number = 200,
+  ) {
     const payload = this.createAuthPayload(user) as AuthPayload;
     const accessToken = this.getToken(payload, 'access');
     const refreshToken = this.getToken(payload, 'refresh');
@@ -59,8 +61,10 @@ export class AuthService {
     }
 
     res.cookie('refreshToken', refreshToken, this.getRefreshCookieConfig());
-
-    return accessToken;
+    res.status(statusCode).json({
+      accessToken,
+      user,
+    });
   }
 
   private handleError(error: any, action: string) {
@@ -79,7 +83,13 @@ export class AuthService {
   }
 
   private createAuthPayload(user: Partial<User>) {
-    return { email: user.email, sub: user.id, role: user.role, jti: uuidv4() };
+    return {
+      sub: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      jti: uuidv4(),
+    };
   }
 
   private getToken(payload: AuthPayload, type: 'access' | 'refresh') {
@@ -131,9 +141,7 @@ export class AuthService {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password, ...rest } = user;
 
-      const accessToken = await this.handleSuccessfulAuth(rest, res);
-
-      res.status(201).json({ accessToken, user: rest });
+      await this.handleSuccessfulAuth(rest, res, 201);
     } catch (error) {
       this.handleError(error, 'sign up user');
     }
@@ -141,9 +149,7 @@ export class AuthService {
 
   async signIn(user: Partial<User>, res: Response) {
     try {
-      const accessToken = await this.handleSuccessfulAuth(user, res);
-
-      res.status(200).json({ accessToken, user });
+      await this.handleSuccessfulAuth(user, res);
     } catch (error) {
       this.handleError(error, 'sign in user');
     }
@@ -177,8 +183,7 @@ export class AuthService {
         throw new UnauthorizedException('Invalid refresh token');
       }
 
-      const accessToken = await this.handleSuccessfulAuth(user, res);
-      res.json({ accessToken });
+      await this.handleSuccessfulAuth(user, res);
     } catch (error) {
       this.handleError(error, 'refresh token');
     }

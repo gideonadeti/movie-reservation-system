@@ -33,12 +33,12 @@ export class EmailService {
       return;
     }
 
-    const frontendUrl =
+    const frontendBaseUrl =
       this.configService.get<string>('FRONTEND_BASE_URL') ||
       'http://localhost:3001';
     const fromEmail = 'gideonadeti0@gmail.com';
 
-    const resetLink = `${frontendUrl}/reset-password?token=${token}`;
+    const resetLink = `${frontendBaseUrl}/auth/reset-password?token=${token}`;
 
     const mailOptions = {
       from: fromEmail,
@@ -47,7 +47,7 @@ export class EmailService {
       html: `
         <h2>Password Reset Request</h2>
         <p>You requested to reset your password. Click the link below to reset it:</p>
-        <p><a href="${resetLink}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Reset Password</a></p>
+        <p><a href="${resetLink}" style="background-color: #6366f1; color: white; padding: 10px 20px; text-decoration: none; border-radius: 10px; display: inline-block; font-weight: 500; transition: background-color 0.2s;">Reset Password</a></p>
         <p>Or copy and paste this link into your browser:</p>
         <p>${resetLink}</p>
         <p>This link will expire in 1 hour.</p>

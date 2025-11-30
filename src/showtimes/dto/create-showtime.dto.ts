@@ -33,12 +33,12 @@ export class CreateShowtimeDto {
   price: number;
 
   /**
-   * Showtime's movie ID
-   * @example "b0b4a9c8-9a7e-4f88-91b9-7340ef2304af"
+   * Showtime's TMDB movie ID
+   * @example 123
    */
   @IsDefined()
-  @IsUUID()
-  movieId: string;
+  @IsNumber()
+  tmdbMovieId: number;
 
   /**
    * Showtime's auditorium ID

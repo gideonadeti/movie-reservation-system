@@ -13,20 +13,20 @@ model User {
   name      String
   email     String   @unique
   password  String
-  role      Role     @default(NADMIN)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  role               UserRole            @default(NADMIN)
   refreshToken       RefreshToken?
   passwordResetToken PasswordResetToken?
   movies             Movie[]
   showtimes          Showtime[]
-  Reservation        Reservation[]
+  reservations       Reservation[]
   auditoriums        Auditorium[]
   seats              Seat[]
 }
 
-enum Role {
+enum UserRole {
   ADMIN
   NADMIN
 }
@@ -107,9 +107,9 @@ model Reservation {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
+  status        ReservationStatus @default(CONFIRMED)
   user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   showtime      Showtime          @relation(fields: [showtimeId], references: [id], onDelete: Cascade)
-  status        ReservationStatus @default(CONFIRMED)
   reservedSeats ReservedSeat[]
 }
 

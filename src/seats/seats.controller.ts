@@ -17,7 +17,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { RolesGuard } from 'src/roles/roles.guard';
 import { Roles } from 'src/roles/roles.decorator';
-import { Role } from '@prisma/client';
+import { UserRole } from '@prisma/client';
 import { UserId } from 'src/user-id/user-id.decorator';
 import { Public } from 'src/auth/public.decorator';
 import { FindAllSeatsDto } from './dto/find-all-seats.dto';

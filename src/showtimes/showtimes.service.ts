@@ -34,7 +34,7 @@ export class ShowtimesService {
       endTimeTo,
       maxPrice,
       minPrice,
-      movieId,
+      tmdbMovieId,
       startTimeFrom,
       startTimeTo,
     } = query;
@@ -44,8 +44,8 @@ export class ShowtimesService {
       whereConditions.auditoriumId = auditoriumId;
     }
 
-    if (movieId) {
-      whereConditions.movieId = movieId;
+    if (tmdbMovieId) {
+      whereConditions.tmdbMovieId = tmdbMovieId;
     }
 
     if (startTimeFrom || startTimeTo) {

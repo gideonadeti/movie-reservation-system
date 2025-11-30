@@ -55,7 +55,7 @@ model Showtime {
   startTime    DateTime
   endTime      DateTime
   price        Float
-  movieId      String
+  tmdbMovieId  Int
   auditoriumId String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt

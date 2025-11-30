@@ -19,11 +19,7 @@ model User {
   role               UserRole            @default(NADMIN)
   refreshToken       RefreshToken?
   passwordResetToken PasswordResetToken?
-  movies             Movie[]
-  showtimes          Showtime[]
   reservations       Reservation[]
-  auditoriums        Auditorium[]
-  seats              Seat[]
 }
 
 enum UserRole {
@@ -41,18 +37,17 @@ model RefreshToken {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model Movie {
-  id          String   @id @default(uuid())
-  title       String   @unique
-  description String
-  imageUrl    String
-  genre       String
-  adminId     String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
 
-  admin     User       @relation(fields: [adminId], references: [id], onDelete: Cascade)
-  showtimes Showtime[]
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
 }
 
 model Showtime {
@@ -60,14 +55,11 @@ model Showtime {
   startTime    DateTime
   endTime      DateTime
   price        Float
-  adminId      String
   movieId      String
   auditoriumId String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  admin        User          @relation(fields: [adminId], references: [id], onDelete: Cascade)
-  movie        Movie         @relation(fields: [movieId], references: [id], onDelete: Cascade)
   auditorium   Auditorium    @relation(fields: [auditoriumId], references: [id], onDelete: Cascade)
   reservations Reservation[]
 }
@@ -76,11 +68,9 @@ model Auditorium {
   id        String   @id @default(uuid())
   name      String   @unique
   capacity  Int
-  adminId   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  admin     User       @relation(fields: [adminId], references: [id], onDelete: Cascade)
   seats     Seat[]
   showtimes Showtime[]
 }
@@ -89,12 +79,10 @@ model Seat {
   id           String   @id @default(uuid())
   label        String
   auditoriumId String
-  adminId      String   @default("0c3fc92c-60ef-4b15-90f2-233d2eb19664")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   auditorium    Auditorium     @relation(fields: [auditoriumId], references: [id], onDelete: Cascade)
-  admin         User           @relation(fields: [adminId], references: [id], onDelete: Cascade)
   reservedSeats ReservedSeat[]
 
   @@unique([label, auditoriumId])
@@ -127,17 +115,4 @@ model ReservedSeat {
 
   seat        Seat        @relation(fields: [seatId], references: [id], onDelete: Cascade)
   reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
-}
-
-model PasswordResetToken {
-  id        String   @id @default(uuid())
-  userId    String   @unique
-  token     String   @unique
-  expiresAt DateTime
-  used      Boolean  @default(false)
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([token])
 }

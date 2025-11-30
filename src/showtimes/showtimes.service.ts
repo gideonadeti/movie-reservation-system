@@ -72,7 +72,7 @@ export class ShowtimesService {
     return whereConditions;
   }
 
-  async create(userId: string, createShowtimeDto: CreateShowtimeDto) {
+  async create(createShowtimeDto: CreateShowtimeDto) {
     const { startTime, endTime, auditoriumId } = createShowtimeDto;
 
     if (startTime > endTime) {
@@ -103,7 +103,7 @@ export class ShowtimesService {
       }
 
       return await this.prismaService.showtime.create({
-        data: { ...createShowtimeDto, adminId: userId },
+        data: { ...createShowtimeDto },
       });
     } catch (error) {
       this.handleError(error, 'create showtime');
@@ -156,7 +156,6 @@ export class ShowtimesService {
       const showtime = await this.prismaService.showtime.findUnique({
         where: { id },
         include: {
-          movie: true,
           auditorium: true,
         },
       });
@@ -171,12 +170,11 @@ export class ShowtimesService {
     }
   }
 
-  async findReports(userId: string, id: string) {
+  async findReports(id: string) {
     try {
       const showtime = await this.prismaService.showtime.findUnique({
-        where: { id, adminId: userId },
+        where: { id },
         include: {
-          movie: true,
           auditorium: true,
           reservations: true,
         },
@@ -192,7 +190,6 @@ export class ShowtimesService {
       const totalRevenue = numberOfReservations * showtime.price;
 
       return {
-        movieTitle: showtime.movie.title,
         auditoriumName: showtime.auditorium.name,
         startTime: showtime.startTime,
         endTime: showtime.endTime,
@@ -205,11 +202,7 @@ export class ShowtimesService {
     }
   }
 
-  async update(
-    userId: string,
-    id: string,
-    updateShowtimeDto: UpdateShowtimeDto,
-  ) {
+  async update(id: string, updateShowtimeDto: UpdateShowtimeDto) {
     const { startTime, endTime, auditoriumId } = updateShowtimeDto;
 
     if (startTime && endTime && startTime > endTime) {
@@ -245,11 +238,9 @@ export class ShowtimesService {
       return await this.prismaService.showtime.update({
         where: {
           id,
-          adminId: userId,
         },
         data: updateShowtimeDto,
         include: {
-          movie: true,
           auditorium: true,
         },
       });
@@ -258,12 +249,11 @@ export class ShowtimesService {
     }
   }
 
-  async remove(userId: string, id: string) {
+  async remove(id: string) {
     try {
       return await this.prismaService.showtime.delete({
         where: {
           id,
-          adminId: userId,
         },
       });
     } catch (error) {

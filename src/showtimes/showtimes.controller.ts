@@ -18,7 +18,6 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { RolesGuard } from 'src/roles/roles.guard';
 import { Roles } from 'src/roles/roles.decorator';
 import { UserRole } from '@prisma/client';
-import { UserId } from 'src/user-id/user-id.decorator';
 import { FindAllShowtimesDto } from './dto/find-all-showtimes.dto';
 import { Public } from 'src/auth/public.decorator';
 
@@ -31,11 +30,8 @@ export class ShowtimesController {
   constructor(private readonly showtimesService: ShowtimesService) {}
 
   @Post()
-  create(
-    @UserId() userId: string,
-    @Body() createShowtimeDto: CreateShowtimeDto,
-  ) {
-    return this.showtimesService.create(userId, createShowtimeDto);
+  create(@Body() createShowtimeDto: CreateShowtimeDto) {
+    return this.showtimesService.create(createShowtimeDto);
   }
 
   @Get()
@@ -51,21 +47,20 @@ export class ShowtimesController {
   }
 
   @Get(':id/reports')
-  findReports(@UserId() userId: string, @Param('id') id: string) {
-    return this.showtimesService.findReports(userId, id);
+  findReports(@Param('id') id: string) {
+    return this.showtimesService.findReports(id);
   }
 
   @Patch(':id')
   update(
-    @UserId() userId: string,
     @Param('id') id: string,
     @Body() updateShowtimeDto: UpdateShowtimeDto,
   ) {
-    return this.showtimesService.update(userId, id, updateShowtimeDto);
+    return this.showtimesService.update(id, updateShowtimeDto);
   }
 
   @Delete(':id')
-  remove(@UserId() userId: string, @Param('id') id: string) {
-    return this.showtimesService.remove(userId, id);
+  remove(@Param('id') id: string) {
+    return this.showtimesService.remove(id);
   }
 }

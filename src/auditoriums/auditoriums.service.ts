@@ -51,10 +51,10 @@ export class AuditoriumsService {
     return whereConditions;
   }
 
-  async create(userId: string, createAuditoriumDto: CreateAuditoriumDto) {
+  async create(createAuditoriumDto: CreateAuditoriumDto) {
     try {
       return await this.prismaService.auditorium.create({
-        data: { ...createAuditoriumDto, adminId: userId },
+        data: { ...createAuditoriumDto },
       });
     } catch (error) {
       this.handleError(error, 'create auditorium');
@@ -119,10 +119,10 @@ export class AuditoriumsService {
     }
   }
 
-  async findReports(userId: string, id: string) {
+  async findReports(id: string) {
     try {
       const auditorium = await this.prismaService.auditorium.findUnique({
-        where: { id, adminId: userId },
+        where: { id },
         include: {
           seats: true,
           showtimes: true,
@@ -146,16 +146,11 @@ export class AuditoriumsService {
     }
   }
 
-  async update(
-    userId: string,
-    id: string,
-    updateAuditoriumDto: UpdateAuditoriumDto,
-  ) {
+  async update(id: string, updateAuditoriumDto: UpdateAuditoriumDto) {
     try {
       return await this.prismaService.auditorium.update({
         where: {
           id,
-          adminId: userId,
         },
         data: updateAuditoriumDto,
       });
@@ -164,12 +159,11 @@ export class AuditoriumsService {
     }
   }
 
-  async remove(userId: string, id: string) {
+  async remove(id: string) {
     try {
       return await this.prismaService.auditorium.delete({
         where: {
           id,
-          adminId: userId,
         },
       });
     } catch (error) {

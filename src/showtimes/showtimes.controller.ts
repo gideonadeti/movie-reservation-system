@@ -25,7 +25,7 @@ import { Public } from 'src/auth/public.decorator';
 @ApiTags('Showtimes')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(Role.ADMIN)
+@Roles(UserRole.ADMIN)
 @Controller('showtimes')
 export class ShowtimesController {
   constructor(private readonly showtimesService: ShowtimesService) {}

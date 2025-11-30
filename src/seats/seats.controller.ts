@@ -25,7 +25,7 @@ import { FindAllSeatsDto } from './dto/find-all-seats.dto';
 @ApiTags('Seats')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(Role.ADMIN)
+@Roles(UserRole.ADMIN)
 @Controller('seats')
 export class SeatsController {
   constructor(private readonly seatsService: SeatsService) {}

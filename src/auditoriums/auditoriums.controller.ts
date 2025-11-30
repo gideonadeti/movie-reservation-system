@@ -25,7 +25,7 @@ import { FindAllAuditoriumsDto } from './dto/find-all-auditoriums.dto';
 @ApiTags('Auditoriums')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(Role.ADMIN)
+@Roles(UserRole.ADMIN)
 @Controller('auditoriums')
 export class AuditoriumsController {
   constructor(private readonly auditoriumsService: AuditoriumsService) {}

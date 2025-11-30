@@ -4,6 +4,6 @@ export interface AuthPayload {
   sub: string;
   name: string;
   email: string;
-  role: Role;
+  role: UserRole;
   jti: string;
 }

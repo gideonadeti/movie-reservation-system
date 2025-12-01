@@ -92,6 +92,7 @@ model Reservation {
   id         String   @id @default(uuid())
   userId     String
   showtimeId String
+  amountPaid Float
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 

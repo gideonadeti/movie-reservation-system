@@ -32,7 +32,12 @@ export class ReservationsService {
   ) {
     const showtime = await tx.showtime.findUnique({
       where: { id: showtimeId },
-      select: { auditoriumId: true, auditorium: true, startTime: true },
+      select: {
+        auditoriumId: true,
+        auditorium: true,
+        startTime: true,
+        price: true,
+      },
     });
 
     if (!showtime) {
@@ -131,17 +136,30 @@ export class ReservationsService {
     }
   }
 
+  private validatePaymentAmount(
+    amountPaid: number,
+    numberOfSeats: number,
+    pricePerSeat: number,
+  ) {
+    const expectedAmount = numberOfSeats * pricePerSeat;
+
+    if (amountPaid < expectedAmount) {
+      throw new BadRequestException(
+        `Insufficient payment. Expected at least $${expectedAmount.toFixed(2)} for ${numberOfSeats} seat(s) at $${pricePerSeat.toFixed(2)} each, but received $${amountPaid.toFixed(2)}`,
+      );
+    }
+  }
+
   async create(userId: string, createReservationDto: CreateReservationDto) {
-    const { showtimeId, seatIds } = createReservationDto;
+    const { showtimeId, seatIds, amountPaid } = createReservationDto;
 
     try {
       return await this.prismaService.$transaction(async (tx) => {
         const showtime = await this.validateShowtimeExists(tx, showtimeId);
-
         const seats = await this.validateSeatIds(tx, seatIds);
 
+        this.validatePaymentAmount(amountPaid, seatIds.length, showtime.price);
         this.ensureSeatsInAuditorium(seats, showtime.auditoriumId);
-
         await this.ensureSeatsNotReserved(tx, seatIds, showtimeId);
         await this.ensureAuditoriumCapacityIsNotExceeded(
           tx,
@@ -150,10 +168,11 @@ export class ReservationsService {
           showtime,
         );
 
-        return tx.reservation.create({
+        const reservation = await tx.reservation.create({
           data: {
             userId,
             showtimeId,
+            amountPaid,
             reservedSeats: {
               create: seatIds.map((seatId) => ({
                 seat: { connect: { id: seatId } },
@@ -161,6 +180,20 @@ export class ReservationsService {
             },
           },
         });
+
+        // Calculate balance
+        const expectedAmount = seatIds.length * showtime.price;
+        const balance = amountPaid - expectedAmount;
+
+        // Return reservation with payment details
+        return {
+          ...reservation,
+          payment: {
+            amountPaid: amountPaid,
+            expectedAmount: parseFloat(expectedAmount.toFixed(2)),
+            balance: balance > 0 ? parseFloat(balance.toFixed(2)) : 0,
+          },
+        };
       });
     } catch (error) {
       this.handleError(error, 'create reservation');

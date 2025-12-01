@@ -363,7 +363,10 @@ export class ShowtimesService {
       }
 
       const numberOfReservations = showtime.reservations.length;
-      const totalRevenue = numberOfReservations * showtime.price;
+      const totalRevenue = showtime.reservations.reduce(
+        (sum, reservation) => sum + reservation.amountPaid,
+        0,
+      );
 
       return {
         auditoriumName: showtime.auditorium.name,

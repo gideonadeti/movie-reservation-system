@@ -4,6 +4,7 @@ import {
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 import { CreateShowtimeDto } from './dto/create-showtime.dto';
 import { UpdateShowtimeDto } from './dto/update-showtime.dto';
@@ -11,9 +12,24 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { FindAllShowtimesDto } from './dto/find-all-showtimes.dto';
 import { Prisma } from '@prisma/client';
 
+type MovieResult = {
+  id: number;
+  title: string;
+};
+
+type FavoritesResponse = {
+  page: number;
+  total_pages: number;
+  total_results: number;
+  results?: MovieResult[];
+};
+
 @Injectable()
 export class ShowtimesService {
-  constructor(private prismaService: PrismaService) {}
+  constructor(
+    private prismaService: PrismaService,
+    private configService: ConfigService,
+  ) {}
 
   private logger = new Logger(ShowtimesService.name);
 
@@ -72,6 +88,107 @@ export class ShowtimesService {
     return whereConditions;
   }
 
+  private getRandomDateWithinNextTwoMonths(): Date {
+    const now = new Date();
+    const twoMonthsLater = new Date(now);
+    twoMonthsLater.setMonth(twoMonthsLater.getMonth() + 2);
+
+    const startMs = now.getTime();
+    const endMs = twoMonthsLater.getTime();
+    const randomMs = startMs + Math.random() * (endMs - startMs);
+
+    return new Date(randomMs);
+  }
+
+  private getRandomDurationMinutes(): number {
+    const min = 90;
+    const max = 180;
+
+    return Math.floor(min + Math.random() * (max - min + 1));
+  }
+
+  private getRandomPrice(): number {
+    const min = 8;
+    const max = 20;
+    const raw = min + Math.random() * (max - min);
+
+    return Math.round(raw * 2) / 2; // nearest 0.5
+  }
+
+  private async fetchTmdbFavorites(): Promise<number[]> {
+    const apiBaseUrl = this.configService.get<string>('TMDB_API_BASE_URL');
+    const bearerToken = this.configService.get<string>('TMDB_BEARER_TOKEN');
+    const accountId = this.configService.get<string>('TMDB_ACCOUNT_ID');
+
+    if (!apiBaseUrl || !bearerToken || !accountId) {
+      throw new BadRequestException(
+        'TMDB environment variables are not configured. Please set TMDB_API_BASE_URL, TMDB_BEARER_TOKEN, and TMDB_ACCOUNT_ID.',
+      );
+    }
+
+    const headers = {
+      accept: 'application/json',
+      Authorization: `Bearer ${bearerToken}`,
+    };
+
+    const firstPageResponse = await fetch(
+      `${apiBaseUrl}/account/${accountId}/favorite/movies?page=1`,
+      {
+        method: 'GET',
+        headers,
+      },
+    );
+
+    if (!firstPageResponse.ok) {
+      const body = await firstPageResponse.text();
+      throw new InternalServerErrorException(
+        `Failed to fetch TMDB favorites: ${firstPageResponse.status} ${firstPageResponse.statusText} -> ${body}`,
+      );
+    }
+
+    const firstPage = (await firstPageResponse.json()) as FavoritesResponse;
+    const allMovies: MovieResult[] = [...(firstPage.results ?? [])];
+
+    // Fetch remaining pages if any
+    for (let page = 2; page <= firstPage.total_pages; page += 1) {
+      const pageResponse = await fetch(
+        `${apiBaseUrl}/account/${accountId}/favorite/movies?page=${page}`,
+        {
+          method: 'GET',
+          headers,
+        },
+      );
+
+      if (!pageResponse.ok) {
+        const body = await pageResponse.text();
+        throw new InternalServerErrorException(
+          `Failed to fetch TMDB favorites page ${page}: ${pageResponse.status} ${pageResponse.statusText} -> ${body}`,
+        );
+      }
+
+      const pageData = (await pageResponse.json()) as FavoritesResponse;
+      allMovies.push(...(pageData.results ?? []));
+    }
+
+    return allMovies.map((movie) => movie.id);
+  }
+
+  private sampleUniqueIds(ids: number[], count: number): number[] {
+    const unique = Array.from(new Set(ids));
+    const n = Math.min(count, unique.length);
+    const selected: number[] = [];
+
+    while (selected.length < n) {
+      const randomIndex = Math.floor(Math.random() * unique.length);
+      const candidate = unique[randomIndex];
+      if (!selected.includes(candidate)) {
+        selected.push(candidate);
+      }
+    }
+
+    return selected;
+  }
+
   async create(createShowtimeDto: CreateShowtimeDto) {
     const { startTime, endTime, auditoriumId } = createShowtimeDto;
 
@@ -107,6 +224,65 @@ export class ShowtimesService {
       });
     } catch (error) {
       this.handleError(error, 'create showtime');
+    }
+  }
+
+  async seed(count = 8) {
+    try {
+      this.logger.log('Fetching favorite movies from TMDB...');
+      const allFavoriteIds = await this.fetchTmdbFavorites();
+
+      if (allFavoriteIds.length === 0) {
+        throw new BadRequestException(
+          'No favorite movies found on TMDB account. Please add favorites to your TMDB account.',
+        );
+      }
+
+      const movieIdsToUse = this.sampleUniqueIds(allFavoriteIds, count);
+
+      this.logger.log(
+        `Selected ${movieIdsToUse.length} random favorite movie IDs from TMDB`,
+      );
+
+      const auditoriums = await this.prismaService.auditorium.findMany();
+
+      if (!auditoriums.length) {
+        throw new BadRequestException(
+          'Cannot seed showtimes because no auditoriums exist',
+        );
+      }
+
+      const createdShowtimes: NonNullable<
+        Awaited<ReturnType<ShowtimesService['create']>>
+      >[] = [];
+
+      for (const tmdbMovieId of movieIdsToUse) {
+        const startTime = this.getRandomDateWithinNextTwoMonths();
+        const durationMinutes = this.getRandomDurationMinutes();
+        const endTime = new Date(
+          startTime.getTime() + durationMinutes * 60 * 1000,
+        );
+
+        const price = this.getRandomPrice();
+        const randomAuditorium =
+          auditoriums[Math.floor(Math.random() * auditoriums.length)];
+
+        const showtime = (await this.create({
+          startTime,
+          endTime,
+          price,
+          tmdbMovieId,
+          auditoriumId: randomAuditorium.id,
+        }))!;
+
+        createdShowtimes.push(showtime);
+      }
+
+      return {
+        showtimes: createdShowtimes,
+      };
+    } catch (error) {
+      this.handleError(error, 'seed showtimes');
     }
   }
 

@@ -1,47 +1,20 @@
-const API_BASE = 'https://api.themoviedb.org/3';
-
-type MovieResult = {
-  id: number;
-  title: string;
-  popularity?: number;
-};
+import {
+  apiBaseUrl,
+  MovieResult,
+  defaultHeaders,
+  getAllFavorites,
+  accountId,
+} from './tmdb-common';
 
 type TopRatedResponse = {
   results?: MovieResult[];
 };
 
-type FavoritesResponse = {
-  page: number;
-  total_pages: number;
-  total_results: number;
-  results?: MovieResult[];
-};
-
-const bearerToken = process.env.TMDB_BEARER_TOKEN;
-const accountId = process.env.TMDB_ACCOUNT_ID ?? '22508994';
-
-if (!bearerToken) {
-  console.error(
-    'Missing TMDB_BEARER_TOKEN. Please export it before running this script.',
-  );
-
-  process.exitCode = 1;
-  process.exit();
-}
-
-const defaultHeaders = {
-  accept: 'application/json',
-  Authorization: `Bearer ${bearerToken}`,
-};
-
-async function fetchTopRated(page: number): Promise<MovieResult[]> {
-  const response = await fetch(
-    `${API_BASE}/movie/top_rated?language=en-US&page=${page}`,
-    {
-      method: 'GET',
-      headers: defaultHeaders,
-    },
-  );
+async function fetchTopRated(page: number) {
+  const response = await fetch(`${apiBaseUrl}/movie/top_rated?page=${page}`, {
+    method: 'GET',
+    headers: defaultHeaders,
+  });
 
   if (!response.ok) {
     const body = await response.text();
@@ -54,30 +27,8 @@ async function fetchTopRated(page: number): Promise<MovieResult[]> {
   return payload.results ?? [];
 }
 
-async function fetchFavorites(page = 1): Promise<FavoritesResponse> {
-  const response = await fetch(
-    `${API_BASE}/account/${accountId}/favorite/movies?language=en-US&page=${page}&sort_by=created_at.asc`,
-    {
-      method: 'GET',
-      headers: defaultHeaders,
-    },
-  );
-
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(
-      `Failed to fetch favorites page ${page}: ${response.status} ${response.statusText} -> ${body}`,
-    );
-  }
-
-  return (await response.json()) as FavoritesResponse;
-}
-
-async function toggleFavorite(
-  movie: MovieResult,
-  favorite: boolean,
-): Promise<void> {
-  const response = await fetch(`${API_BASE}/account/${accountId}/favorite`, {
+async function toggleFavorite(movie: MovieResult, favorite: boolean) {
+  const response = await fetch(`${apiBaseUrl}/account/${accountId}/favorite`, {
     method: 'POST',
     headers: {
       ...defaultHeaders,
@@ -104,21 +55,10 @@ async function toggleFavorite(
   );
 }
 
-async function getAllFavorites(): Promise<MovieResult[]> {
-  const firstPage = await fetchFavorites(1);
-  const pages = [firstPage];
-
-  for (let page = 2; page <= firstPage.total_pages; page += 1) {
-    pages.push(await fetchFavorites(page));
-  }
-
-  return pages.flatMap((page) => page.results ?? []);
-}
-
 async function collectTopRatedMovies(
   requiredCount: number,
   excludeIds: Set<number>,
-): Promise<MovieResult[]> {
+) {
   const collected: MovieResult[] = [];
   let page = 1;
 
@@ -136,7 +76,7 @@ async function collectTopRatedMovies(
   return collected.slice(0, requiredCount);
 }
 
-async function run(): Promise<void> {
+async function run() {
   try {
     const TARGET_COUNT = 88;
     const MOVIES_PER_PAGE = 20;

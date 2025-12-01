@@ -6,6 +6,9 @@ import {
   ArrayUnique,
   IsDefined,
   IsIn,
+  IsNumber,
+  IsPositive,
+  Min,
 } from 'class-validator';
 
 import { ReservationStatus } from '@prisma/client';
@@ -28,6 +31,15 @@ export class CreateReservationDto {
   @ArrayUnique()
   @IsUUID('all', { each: true })
   seatIds: string[];
+
+  /**
+   * Amount paid by the user (must be >= number of seats × showtime price)
+   * @example 25.0
+   */
+  @IsNumber()
+  @IsPositive()
+  @Min(0)
+  amountPaid: number;
 
   /**
    * Reservation's status

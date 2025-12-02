@@ -300,7 +300,7 @@ export class ShowtimesService {
       if (!page && !limit) {
         const showtimes = await this.prismaService.showtime.findMany({
           where: whereConditions,
-          orderBy: { [sortBy || 'createdAt']: order || 'desc' },
+          orderBy: { [sortBy || 'startTime']: order || 'asc' },
           include: {
             auditorium: true,
             _count: {
@@ -329,7 +329,7 @@ export class ShowtimesService {
       const lastPage = Math.ceil(total / numberLimit);
       const showtimes = await this.prismaService.showtime.findMany({
         where: whereConditions,
-        orderBy: { [sortBy || 'createdAt']: order || 'desc' },
+        orderBy: { [sortBy || 'startTime']: order || 'asc' },
         skip: (numberPage - 1) * numberLimit,
         take: numberLimit,
         include: {

@@ -295,6 +295,9 @@ export class ShowtimesService {
         return await this.prismaService.showtime.findMany({
           where: whereConditions,
           orderBy: { [sortBy || 'createdAt']: order || 'desc' },
+          include: {
+            auditorium: true,
+          },
         });
       }
 
@@ -309,6 +312,9 @@ export class ShowtimesService {
         orderBy: { [sortBy || 'createdAt']: order || 'desc' },
         skip: (numberPage - 1) * numberLimit,
         take: numberLimit,
+        include: {
+          auditorium: true,
+        },
       });
 
       return {

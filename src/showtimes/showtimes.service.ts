@@ -313,12 +313,10 @@ export class ShowtimesService {
           },
         });
 
-        return {
-          showtimes: showtimes.map(({ _count, ...showtime }) => ({
-            ...showtime,
-            numberOfReservations: _count.reservations,
-          })),
-        };
+        return showtimes.map(({ _count, ...showtime }) => ({
+          ...showtime,
+          numberOfReservations: _count.reservations,
+        }));
       }
 
       const numberPage = page || 1;

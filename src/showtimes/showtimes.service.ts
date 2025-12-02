@@ -292,13 +292,25 @@ export class ShowtimesService {
 
     try {
       if (!page && !limit) {
-        return await this.prismaService.showtime.findMany({
+        const showtimes = await this.prismaService.showtime.findMany({
           where: whereConditions,
           orderBy: { [sortBy || 'createdAt']: order || 'desc' },
           include: {
             auditorium: true,
+            _count: {
+              select: {
+                reservations: true,
+              },
+            },
           },
         });
+
+        return {
+          showtimes: showtimes.map(({ _count, ...showtime }) => ({
+            ...showtime,
+            numberOfReservations: _count.reservations,
+          })),
+        };
       }
 
       const numberPage = page || 1;
@@ -314,11 +326,19 @@ export class ShowtimesService {
         take: numberLimit,
         include: {
           auditorium: true,
+          _count: {
+            select: {
+              reservations: true,
+            },
+          },
         },
       });
 
       return {
-        showtimes,
+        showtimes: showtimes.map(({ _count, ...showtime }) => ({
+          ...showtime,
+          numberOfReservations: _count.reservations,
+        })),
         metadata: {
           total,
           lastPage,

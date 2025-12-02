@@ -10,7 +10,7 @@ import { CreateShowtimeDto } from './dto/create-showtime.dto';
 import { UpdateShowtimeDto } from './dto/update-showtime.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { FindAllShowtimesDto } from './dto/find-all-showtimes.dto';
-import { Prisma } from '@prisma/client';
+import { Prisma, ReservationStatus } from '@prisma/client';
 
 type MovieResult = {
   id: number;
@@ -76,6 +76,12 @@ export class ShowtimesService {
 
       if (endTimeFrom) whereConditions.endTime.gte = endTimeFrom;
       if (endTimeTo) whereConditions.endTime.lte = endTimeTo;
+    } else {
+      // By default, exclude past showtimes (showtimes that have already ended)
+      // Only apply this if endTimeTo is not explicitly provided
+      whereConditions.endTime = {
+        gte: new Date(),
+      };
     }
 
     if (minPrice || maxPrice) {
@@ -299,7 +305,9 @@ export class ShowtimesService {
             auditorium: true,
             _count: {
               select: {
-                reservations: true,
+                reservations: {
+                  where: { status: ReservationStatus.CONFIRMED },
+                },
               },
             },
           },
@@ -328,7 +336,9 @@ export class ShowtimesService {
           auditorium: true,
           _count: {
             select: {
-              reservations: true,
+              reservations: {
+                where: { status: ReservationStatus.CONFIRMED },
+              },
             },
           },
         },

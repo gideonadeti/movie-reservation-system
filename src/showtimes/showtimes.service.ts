@@ -309,8 +309,14 @@ export class ShowtimesService {
             },
             reservations: {
               where: { status: ReservationStatus.CONFIRMED },
-              include: {
-                reservedSeats: true,
+              select: {
+                id: true,
+                reservedSeats: {
+                  select: {
+                    id: true,
+                    seatId: true,
+                  },
+                },
               },
             },
             _count: {
@@ -348,8 +354,14 @@ export class ShowtimesService {
           },
           reservations: {
             where: { status: ReservationStatus.CONFIRMED },
-            include: {
-              reservedSeats: true,
+            select: {
+              id: true,
+              reservedSeats: {
+                select: {
+                  id: true,
+                  seatId: true,
+                },
+              },
             },
           },
           _count: {

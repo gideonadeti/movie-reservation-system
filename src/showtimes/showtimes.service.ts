@@ -386,7 +386,11 @@ export class ShowtimesService {
         where: { id },
         include: {
           auditorium: true,
-          reservations: true,
+          reservations: {
+            where: {
+              status: ReservationStatus.CONFIRMED,
+            },
+          },
         },
       });
 
@@ -398,7 +402,7 @@ export class ShowtimesService {
 
       const numberOfReservations = showtime.reservations.length;
       const totalRevenue = showtime.reservations.reduce(
-        (sum, reservation) => sum + reservation.amountPaid,
+        (sum, reservation) => sum + reservation.amountCharged,
         0,
       );
 

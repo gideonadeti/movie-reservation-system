@@ -138,14 +138,25 @@ export class ReservationsService {
 
   private validatePaymentAmount(
     amountPaid: number,
+    amountCharged: number,
     numberOfSeats: number,
     pricePerSeat: number,
   ) {
-    const expectedAmount = numberOfSeats * pricePerSeat;
+    if (amountCharged !== numberOfSeats * pricePerSeat) {
+      // This should never happen if we compute amountCharged correctly;
+      // guard against accidental mismatches.
+      throw new InternalServerErrorException(
+        'Invalid charged amount calculated for reservation',
+      );
+    }
 
-    if (amountPaid < expectedAmount) {
+    if (amountPaid < amountCharged) {
       throw new BadRequestException(
-        `Insufficient payment. Expected at least $${expectedAmount.toFixed(2)} for ${numberOfSeats} seat(s) at $${pricePerSeat.toFixed(2)} each, but received $${amountPaid.toFixed(2)}`,
+        `Insufficient payment. Expected at least $${amountCharged.toFixed(
+          2,
+        )} for ${numberOfSeats} seat(s) at $${pricePerSeat.toFixed(
+          2,
+        )} each, but received $${amountPaid.toFixed(2)}`,
       );
     }
   }
@@ -157,8 +168,14 @@ export class ReservationsService {
       return await this.prismaService.$transaction(async (tx) => {
         const showtime = await this.validateShowtimeExists(tx, showtimeId);
         const seats = await this.validateSeatIds(tx, seatIds);
+        const amountCharged = seatIds.length * showtime.price;
 
-        this.validatePaymentAmount(amountPaid, seatIds.length, showtime.price);
+        this.validatePaymentAmount(
+          amountPaid,
+          amountCharged,
+          seatIds.length,
+          showtime.price,
+        );
         this.ensureSeatsInAuditorium(seats, showtime.auditoriumId);
         await this.ensureSeatsNotReserved(tx, seatIds, showtimeId);
         await this.ensureAuditoriumCapacityIsNotExceeded(
@@ -172,6 +189,7 @@ export class ReservationsService {
           data: {
             userId,
             showtimeId,
+            amountCharged,
             amountPaid,
             reservedSeats: {
               create: seatIds.map((seatId) => ({
@@ -182,15 +200,14 @@ export class ReservationsService {
         });
 
         // Calculate balance
-        const expectedAmount = seatIds.length * showtime.price;
-        const balance = amountPaid - expectedAmount;
+        const balance = amountPaid - amountCharged;
 
         // Return reservation with payment details
         return {
           ...reservation,
           payment: {
-            amountPaid: amountPaid,
-            expectedAmount: parseFloat(expectedAmount.toFixed(2)),
+            amountCharged: parseFloat(amountCharged.toFixed(2)),
+            amountPaid: parseFloat(amountPaid.toFixed(2)),
             balance: balance > 0 ? parseFloat(balance.toFixed(2)) : 0,
           },
         };

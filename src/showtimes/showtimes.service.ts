@@ -302,7 +302,17 @@ export class ShowtimesService {
           where: whereConditions,
           orderBy: { [sortBy || 'startTime']: order || 'asc' },
           include: {
-            auditorium: true,
+            auditorium: {
+              include: {
+                seats: true,
+              },
+            },
+            reservations: {
+              where: { status: ReservationStatus.CONFIRMED },
+              include: {
+                reservedSeats: true,
+              },
+            },
             _count: {
               select: {
                 reservations: {
@@ -331,7 +341,17 @@ export class ShowtimesService {
         skip: (numberPage - 1) * numberLimit,
         take: numberLimit,
         include: {
-          auditorium: true,
+          auditorium: {
+            include: {
+              seats: true,
+            },
+          },
+          reservations: {
+            where: { status: ReservationStatus.CONFIRMED },
+            include: {
+              reservedSeats: true,
+            },
+          },
           _count: {
             select: {
               reservations: {

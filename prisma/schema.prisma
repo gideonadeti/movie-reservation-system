@@ -89,12 +89,16 @@ model Seat {
 }
 
 model Reservation {
-  id         String   @id @default(uuid())
-  userId     String
-  showtimeId String
-  amountPaid Float
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id            String   @id @default(uuid())
+  userId        String
+  showtimeId    String
+  /// Total amount that should be charged for this reservation
+  /// (e.g. numberOfSeats * pricePerSeat at booking time)
+  amountCharged Float
+  /// Actual amount paid in this transaction (may be <= amountCharged)
+  amountPaid    Float
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   status        ReservationStatus @default(CONFIRMED)
   user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)

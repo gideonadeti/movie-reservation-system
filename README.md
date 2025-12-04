@@ -77,7 +77,7 @@ A robust RESTful API built with NestJS for managing movie reservations, showtime
 
 ## Screenshots
 
-For screenshots, please visit the [moviereserv repository](https://github.com/gideonadeti/moviereserv).
+For screenshots, please visit the [moviereserv repository](https://github.com/gideonadeti/moviereserv/?tab=readme-ov-file#screenshots).
 
 ## Technologies Used
 

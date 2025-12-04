@@ -62,6 +62,10 @@ model Showtime {
 
   auditorium   Auditorium    @relation(fields: [auditoriumId], references: [id], onDelete: Cascade)
   reservations Reservation[]
+
+  /// Main index for GET /showtimes:
+  /// WHERE endTime >= now() ORDER BY startTime
+  @@index([endTime, startTime])
 }
 
 model Auditorium {
@@ -86,6 +90,8 @@ model Seat {
   reservedSeats ReservedSeat[]
 
   @@unique([label, auditoriumId])
+  /// For fetching seats by auditorium
+  @@index([auditoriumId])
 }
 
 model Reservation {
@@ -104,6 +110,9 @@ model Reservation {
   user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   showtime      Showtime          @relation(fields: [showtimeId], references: [id], onDelete: Cascade)
   reservedSeats ReservedSeat[]
+
+  /// For fetching confirmed reservations per showtime
+  @@index([showtimeId, status])
 }
 
 enum ReservationStatus {
@@ -120,4 +129,7 @@ model ReservedSeat {
 
   seat        Seat        @relation(fields: [seatId], references: [id], onDelete: Cascade)
   reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+
+  /// For fetching reserved seats by reservation
+  @@index([reservationId])
 }

@@ -8,7 +8,7 @@ import {
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationDto } from './dto/update-reservation.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Prisma, Seat } from '@prisma/client';
+import { Prisma, ReservationStatus, Seat } from '@prisma/client';
 
 @Injectable()
 export class ReservationsService {
@@ -217,6 +217,37 @@ export class ReservationsService {
     }
   }
 
+  async cancel(userId: string, id: string) {
+    try {
+      return await this.prismaService.$transaction(async (tx) => {
+        const reservation = await tx.reservation.findUnique({
+          where: { id, userId },
+        });
+
+        if (!reservation) {
+          throw new BadRequestException(`Reservation with id ${id} not found`);
+        }
+
+        if (reservation.status === ReservationStatus.CANCELLED) {
+          throw new BadRequestException(
+            `Reservation with id ${id} already cancelled`,
+          );
+        }
+
+        await tx.reservedSeat.deleteMany({
+          where: { reservationId: id },
+        });
+
+        return await tx.reservation.update({
+          where: { id, userId },
+          data: { status: ReservationStatus.CANCELLED },
+        });
+      });
+    } catch (error) {
+      this.handleError(error, `cancel reservation with id ${id}`);
+    }
+  }
+
   async findAll(userId: string) {
     try {
       return await this.prismaService.reservation.findMany({
@@ -286,7 +317,6 @@ export class ReservationsService {
           }
 
           this.ensureSeatsInAuditorium(seats, showtime.auditoriumId);
-
           await this.ensureSeatsNotReserved(tx, seatIds, showtimeId);
           await this.ensureAuditoriumCapacityIsNotExceeded(
             tx,

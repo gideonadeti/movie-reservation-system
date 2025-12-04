@@ -165,53 +165,56 @@ export class ReservationsService {
     const { showtimeId, seatIds, amountPaid } = createReservationDto;
 
     try {
-      return await this.prismaService.$transaction(async (tx) => {
-        const showtime = await this.validateShowtimeExists(tx, showtimeId);
-        const seats = await this.validateSeatIds(tx, seatIds);
-        const amountCharged = seatIds.length * showtime.price;
+      return await this.prismaService.$transaction(
+        async (tx) => {
+          const showtime = await this.validateShowtimeExists(tx, showtimeId);
+          const seats = await this.validateSeatIds(tx, seatIds);
+          const amountCharged = seatIds.length * showtime.price;
 
-        this.validatePaymentAmount(
-          amountPaid,
-          amountCharged,
-          seatIds.length,
-          showtime.price,
-        );
-        this.ensureSeatsInAuditorium(seats, showtime.auditoriumId);
-        await this.ensureSeatsNotReserved(tx, seatIds, showtimeId);
-        await this.ensureAuditoriumCapacityIsNotExceeded(
-          tx,
-          showtimeId,
-          seatIds,
-          showtime,
-        );
-
-        const reservation = await tx.reservation.create({
-          data: {
-            userId,
-            showtimeId,
-            amountCharged,
+          this.validatePaymentAmount(
             amountPaid,
-            reservedSeats: {
-              create: seatIds.map((seatId) => ({
-                seat: { connect: { id: seatId } },
-              })),
+            amountCharged,
+            seatIds.length,
+            showtime.price,
+          );
+          this.ensureSeatsInAuditorium(seats, showtime.auditoriumId);
+          await this.ensureSeatsNotReserved(tx, seatIds, showtimeId);
+          await this.ensureAuditoriumCapacityIsNotExceeded(
+            tx,
+            showtimeId,
+            seatIds,
+            showtime,
+          );
+
+          const reservation = await tx.reservation.create({
+            data: {
+              userId,
+              showtimeId,
+              amountCharged,
+              amountPaid,
+              reservedSeats: {
+                create: seatIds.map((seatId) => ({
+                  seat: { connect: { id: seatId } },
+                })),
+              },
             },
-          },
-        });
+          });
 
-        // Calculate balance
-        const balance = amountPaid - amountCharged;
+          // Calculate balance
+          const balance = amountPaid - amountCharged;
 
-        // Return reservation with payment details
-        return {
-          ...reservation,
-          payment: {
-            amountCharged: parseFloat(amountCharged.toFixed(2)),
-            amountPaid: parseFloat(amountPaid.toFixed(2)),
-            balance: balance > 0 ? parseFloat(balance.toFixed(2)) : 0,
-          },
-        };
-      });
+          // Return reservation with payment details
+          return {
+            ...reservation,
+            payment: {
+              amountCharged: parseFloat(amountCharged.toFixed(2)),
+              amountPaid: parseFloat(amountPaid.toFixed(2)),
+              balance: balance > 0 ? parseFloat(balance.toFixed(2)) : 0,
+            },
+          };
+        },
+        { timeout: 28000 }, // 28 seconds
+      );
     } catch (error) {
       this.handleError(error, 'create reservation');
     }

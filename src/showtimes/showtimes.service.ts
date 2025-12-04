@@ -311,6 +311,8 @@ export class ShowtimesService {
               where: { status: ReservationStatus.CONFIRMED },
               select: {
                 id: true,
+                showtimeId: true,
+                userId: true,
                 reservedSeats: {
                   select: {
                     id: true,
@@ -344,6 +346,8 @@ export class ShowtimesService {
             where: { status: ReservationStatus.CONFIRMED },
             select: {
               id: true,
+              showtimeId: true,
+              userId: true,
               reservedSeats: {
                 select: {
                   id: true,

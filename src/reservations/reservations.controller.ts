@@ -31,6 +31,11 @@ export class ReservationsController {
     return this.reservationsService.create(userId, createReservationDto);
   }
 
+  @Post(':id/cancel')
+  cancel(@UserId() userId: string, @Param('id') id: string) {
+    return this.reservationsService.cancel(userId, id);
+  }
+
   @Get()
   findAll(@UserId() userId: string) {
     return this.reservationsService.findAll(userId);

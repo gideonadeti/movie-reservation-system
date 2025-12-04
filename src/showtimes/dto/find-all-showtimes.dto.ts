@@ -2,9 +2,9 @@ import {
   IsIn,
   IsOptional,
   IsPositive,
-  IsUUID,
   IsNumber,
   IsDate,
+  IsUUID,
 } from 'class-validator';
 
 export class FindAllShowtimesDto {
@@ -40,10 +40,10 @@ export class FindAllShowtimesDto {
   @IsPositive()
   maxPrice?: number;
 
-  /** Filter by movie ID */
+  /** Filter by TMDB movie ID */
   @IsOptional()
-  @IsUUID()
-  movieId?: string;
+  @IsNumber()
+  tmdbMovieId?: number;
 
   /** Filter by auditorium ID */
   @IsOptional()

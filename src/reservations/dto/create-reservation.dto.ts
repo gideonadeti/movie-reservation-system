@@ -4,11 +4,14 @@ import {
   IsUUID,
   ArrayNotEmpty,
   ArrayUnique,
-  IsDefined,
   IsIn,
+  IsNumber,
+  IsPositive,
+  Min,
+  IsOptional,
 } from 'class-validator';
 
-import { ReservationStatus } from 'generated/prisma';
+import { ReservationStatus } from '@prisma/client';
 
 export class CreateReservationDto {
   /**
@@ -30,10 +33,19 @@ export class CreateReservationDto {
   seatIds: string[];
 
   /**
+   * Amount paid by the user (must be >= number of seats × showtime price)
+   * @example 25.0
+   */
+  @IsNumber()
+  @IsPositive()
+  @Min(0)
+  amountPaid: number;
+
+  /**
    * Reservation's status
    * @example 'CONFIRMED'
    */
-  @IsDefined()
+  @IsOptional()
   @IsIn(Object.values(ReservationStatus))
   status?: ReservationStatus;
 }

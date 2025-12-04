@@ -1,39 +1,20 @@
-const API_BASE = 'https://api.themoviedb.org/3';
-
-type MovieResult = {
-  id: number;
-  title: string;
-};
+import {
+  apiBaseUrl,
+  MovieResult,
+  defaultHeaders,
+  getAllFavorites,
+  accountId,
+} from './tmdb-common';
 
 type TopRatedResponse = {
   results?: MovieResult[];
 };
 
-const bearerToken = process.env.TMDB_BEARER_TOKEN;
-const accountId = process.env.TMDB_ACCOUNT_ID ?? '22508994';
-
-if (!bearerToken) {
-  console.error(
-    'Missing TMDB_BEARER_TOKEN. Please export it before running this script.',
-  );
-
-  process.exitCode = 1;
-  process.exit();
-}
-
-const defaultHeaders = {
-  accept: 'application/json',
-  Authorization: `Bearer ${bearerToken}`,
-};
-
-async function fetchTopRated(page: number): Promise<MovieResult[]> {
-  const response = await fetch(
-    `${API_BASE}/movie/top_rated?language=en-US&page=${page}`,
-    {
-      method: 'GET',
-      headers: defaultHeaders,
-    },
-  );
+async function fetchTopRated(page: number) {
+  const response = await fetch(`${apiBaseUrl}/movie/top_rated?page=${page}`, {
+    method: 'GET',
+    headers: defaultHeaders,
+  });
 
   if (!response.ok) {
     const body = await response.text();
@@ -46,8 +27,8 @@ async function fetchTopRated(page: number): Promise<MovieResult[]> {
   return payload.results ?? [];
 }
 
-async function markFavorite(movie: MovieResult): Promise<void> {
-  const response = await fetch(`${API_BASE}/account/${accountId}/favorite`, {
+async function toggleFavorite(movie: MovieResult, favorite: boolean) {
+  const response = await fetch(`${apiBaseUrl}/account/${accountId}/favorite`, {
     method: 'POST',
     headers: {
       ...defaultHeaders,
@@ -56,36 +37,90 @@ async function markFavorite(movie: MovieResult): Promise<void> {
     body: JSON.stringify({
       media_type: 'movie',
       media_id: movie.id,
-      favorite: true,
+      favorite,
     }),
   });
 
   if (!response.ok) {
     const body = await response.text();
     throw new Error(
-      `Failed to favorite movie ${movie.id} (${movie.title}): ${response.status} ${response.statusText} -> ${body}`,
+      `Failed to ${favorite ? 'favorite' : 'unfavorite'} movie ${movie.id} (${movie.title}): ${response.status} ${response.statusText} -> ${body}`,
     );
   }
 
   const data = (await response.json()) as { status_code: number };
-
+  const symbol = favorite ? '✓ Added favorite' : '✗ Removed favorite';
   console.log(
-    `✓ Favorited ${movie.title} (id: ${movie.id}) | status_code: ${data.status_code}`,
+    `${symbol} ${movie.title} (id: ${movie.id}) | status_code: ${data.status_code}`,
   );
 }
 
-async function run(): Promise<void> {
-  try {
-    console.log('Fetching top rated movies (pages 1 & 2)...');
-    const pages = await Promise.all([1, 2].map((page) => fetchTopRated(page)));
-    const movies = pages.flat();
+async function collectTopRatedMovies(
+  requiredCount: number,
+  excludeIds: Set<number>,
+) {
+  const collected: MovieResult[] = [];
+  let page = 1;
 
-    console.log(`Retrieved ${movies.length} movies. Marking as favorites...`);
-    for (const movie of movies) {
-      await markFavorite(movie);
+  while (collected.length < requiredCount) {
+    const pageResults = await fetchTopRated(page);
+    if (pageResults.length === 0) {
+      break;
     }
 
-    console.log('All movies from page 1 & 2 have been marked as favorites.');
+    const newMovies = pageResults.filter((movie) => !excludeIds.has(movie.id));
+    collected.push(...newMovies);
+    page += 1;
+  }
+
+  return collected.slice(0, requiredCount);
+}
+
+async function run() {
+  try {
+    const TARGET_COUNT = 88;
+    const MOVIES_PER_PAGE = 20;
+    console.log('Fetching current favorites list...');
+    const favorites = await getAllFavorites();
+    console.log(`Currently have ${favorites.length} favorite movies.`);
+
+    if (favorites.length > TARGET_COUNT) {
+      const toRemoveCount = favorites.length - TARGET_COUNT;
+      console.log(
+        `Trimming ${toRemoveCount} lowest-popularity favorites to reach ${TARGET_COUNT}.`,
+      );
+
+      const sortedByPopularity = [...favorites].sort((a, b) => {
+        const popA = a.popularity ?? 0;
+        const popB = b.popularity ?? 0;
+        return popA - popB;
+      });
+
+      for (const movie of sortedByPopularity.slice(0, toRemoveCount)) {
+        await toggleFavorite(movie, false);
+      }
+    }
+
+    const updatedFavorites = await getAllFavorites();
+    if (updatedFavorites.length === TARGET_COUNT) {
+      console.log('Favorites already at desired count. Nothing to add.');
+      return;
+    }
+
+    const remaining = TARGET_COUNT - updatedFavorites.length;
+    const pagesNeeded = Math.ceil(remaining / MOVIES_PER_PAGE);
+    console.log(
+      `Need ${remaining} more favorites. Fetching top rated pages 1-${pagesNeeded} (skipping already-favorited movies)...`,
+    );
+
+    const existingIds = new Set(updatedFavorites.map((movie) => movie.id));
+    const candidates = await collectTopRatedMovies(remaining, existingIds);
+
+    for (const movie of candidates) {
+      await toggleFavorite(movie, true);
+    }
+
+    console.log('Favorites list trimmed and refilled to the target count.');
   } catch (error) {
     console.error(error);
     process.exitCode = 1;

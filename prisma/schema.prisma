@@ -1,6 +1,5 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
 }
 
 datasource db {
@@ -14,19 +13,16 @@ model User {
   name      String
   email     String   @unique
   password  String
-  role      Role     @default(NADMIN)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  refreshToken RefreshToken?
-  movies       Movie[]
-  showtimes    Showtime[]
-  Reservation  Reservation[]
-  auditoriums  Auditorium[]
-  seats        Seat[]
+  role               UserRole            @default(NADMIN)
+  refreshToken       RefreshToken?
+  passwordResetToken PasswordResetToken?
+  reservations       Reservation[]
 }
 
-enum Role {
+enum UserRole {
   ADMIN
   NADMIN
 }
@@ -41,18 +37,17 @@ model RefreshToken {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model Movie {
-  id          String   @id @default(uuid())
-  title       String   @unique
-  description String
-  imageUrl    String
-  genre       String
-  adminId     String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
 
-  admin     User       @relation(fields: [adminId], references: [id], onDelete: Cascade)
-  showtimes Showtime[]
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
 }
 
 model Showtime {
@@ -60,27 +55,26 @@ model Showtime {
   startTime    DateTime
   endTime      DateTime
   price        Float
-  adminId      String
-  movieId      String
+  tmdbMovieId  Int
   auditoriumId String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  admin        User          @relation(fields: [adminId], references: [id], onDelete: Cascade)
-  movie        Movie         @relation(fields: [movieId], references: [id], onDelete: Cascade)
   auditorium   Auditorium    @relation(fields: [auditoriumId], references: [id], onDelete: Cascade)
   reservations Reservation[]
+
+  /// Main index for GET /showtimes:
+  /// WHERE endTime >= now() ORDER BY startTime
+  @@index([endTime, startTime])
 }
 
 model Auditorium {
   id        String   @id @default(uuid())
   name      String   @unique
   capacity  Int
-  adminId   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  admin     User       @relation(fields: [adminId], references: [id], onDelete: Cascade)
   seats     Seat[]
   showtimes Showtime[]
 }
@@ -89,28 +83,36 @@ model Seat {
   id           String   @id @default(uuid())
   label        String
   auditoriumId String
-  adminId      String   @default("0c3fc92c-60ef-4b15-90f2-233d2eb19664")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   auditorium    Auditorium     @relation(fields: [auditoriumId], references: [id], onDelete: Cascade)
-  admin         User           @relation(fields: [adminId], references: [id], onDelete: Cascade)
   reservedSeats ReservedSeat[]
 
   @@unique([label, auditoriumId])
+  /// For fetching seats by auditorium
+  @@index([auditoriumId])
 }
 
 model Reservation {
-  id         String   @id @default(uuid())
-  userId     String
-  showtimeId String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id            String   @id @default(uuid())
+  userId        String
+  showtimeId    String
+  /// Total amount that should be charged for this reservation
+  /// (e.g. numberOfSeats * pricePerSeat at booking time)
+  amountCharged Float
+  /// Actual amount paid in this transaction (may be <= amountCharged)
+  amountPaid    Float
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
+  status        ReservationStatus @default(CONFIRMED)
   user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   showtime      Showtime          @relation(fields: [showtimeId], references: [id], onDelete: Cascade)
-  status        ReservationStatus @default(CONFIRMED)
   reservedSeats ReservedSeat[]
+
+  /// For fetching confirmed reservations per showtime
+  @@index([showtimeId, status])
 }
 
 enum ReservationStatus {
@@ -127,4 +129,7 @@ model ReservedSeat {
 
   seat        Seat        @relation(fields: [seatId], references: [id], onDelete: Cascade)
   reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+
+  /// For fetching reserved seats by reservation
+  @@index([reservationId])
 }

@@ -8,7 +8,7 @@ import {
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationDto } from './dto/update-reservation.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Prisma, Seat } from 'generated/prisma';
+import { Prisma, ReservationStatus, Seat } from '@prisma/client';
 
 @Injectable()
 export class ReservationsService {
@@ -32,7 +32,12 @@ export class ReservationsService {
   ) {
     const showtime = await tx.showtime.findUnique({
       where: { id: showtimeId },
-      select: { auditoriumId: true, auditorium: true, startTime: true },
+      select: {
+        auditoriumId: true,
+        auditorium: true,
+        startTime: true,
+        price: true,
+      },
     });
 
     if (!showtime) {
@@ -131,39 +136,118 @@ export class ReservationsService {
     }
   }
 
+  private validatePaymentAmount(
+    amountPaid: number,
+    amountCharged: number,
+    numberOfSeats: number,
+    pricePerSeat: number,
+  ) {
+    if (amountCharged !== numberOfSeats * pricePerSeat) {
+      // This should never happen if we compute amountCharged correctly;
+      // guard against accidental mismatches.
+      throw new InternalServerErrorException(
+        'Invalid charged amount calculated for reservation',
+      );
+    }
+
+    if (amountPaid < amountCharged) {
+      throw new BadRequestException(
+        `Insufficient payment. Expected at least $${amountCharged.toFixed(
+          2,
+        )} for ${numberOfSeats} seat(s) at $${pricePerSeat.toFixed(
+          2,
+        )} each, but received $${amountPaid.toFixed(2)}`,
+      );
+    }
+  }
+
   async create(userId: string, createReservationDto: CreateReservationDto) {
-    const { showtimeId, seatIds } = createReservationDto;
+    const { showtimeId, seatIds, amountPaid } = createReservationDto;
 
     try {
-      return await this.prismaService.$transaction(async (tx) => {
-        const showtime = await this.validateShowtimeExists(tx, showtimeId);
+      return await this.prismaService.$transaction(
+        async (tx) => {
+          const showtime = await this.validateShowtimeExists(tx, showtimeId);
+          const seats = await this.validateSeatIds(tx, seatIds);
+          const amountCharged = seatIds.length * showtime.price;
 
-        const seats = await this.validateSeatIds(tx, seatIds);
-
-        this.ensureSeatsInAuditorium(seats, showtime.auditoriumId);
-
-        await this.ensureSeatsNotReserved(tx, seatIds, showtimeId);
-        await this.ensureAuditoriumCapacityIsNotExceeded(
-          tx,
-          showtimeId,
-          seatIds,
-          showtime,
-        );
-
-        return tx.reservation.create({
-          data: {
-            userId,
+          this.validatePaymentAmount(
+            amountPaid,
+            amountCharged,
+            seatIds.length,
+            showtime.price,
+          );
+          this.ensureSeatsInAuditorium(seats, showtime.auditoriumId);
+          await this.ensureSeatsNotReserved(tx, seatIds, showtimeId);
+          await this.ensureAuditoriumCapacityIsNotExceeded(
+            tx,
             showtimeId,
-            reservedSeats: {
-              create: seatIds.map((seatId) => ({
-                seat: { connect: { id: seatId } },
-              })),
+            seatIds,
+            showtime,
+          );
+
+          const reservation = await tx.reservation.create({
+            data: {
+              userId,
+              showtimeId,
+              amountCharged,
+              amountPaid,
+              reservedSeats: {
+                create: seatIds.map((seatId) => ({
+                  seat: { connect: { id: seatId } },
+                })),
+              },
             },
-          },
+          });
+
+          // Calculate balance
+          const balance = amountPaid - amountCharged;
+
+          // Return reservation with payment details
+          return {
+            ...reservation,
+            payment: {
+              amountCharged: parseFloat(amountCharged.toFixed(2)),
+              amountPaid: parseFloat(amountPaid.toFixed(2)),
+              balance: balance > 0 ? parseFloat(balance.toFixed(2)) : 0,
+            },
+          };
+        },
+        { timeout: 28000 }, // 28 seconds
+      );
+    } catch (error) {
+      this.handleError(error, 'create reservation');
+    }
+  }
+
+  async cancel(userId: string, id: string) {
+    try {
+      return await this.prismaService.$transaction(async (tx) => {
+        const reservation = await tx.reservation.findUnique({
+          where: { id, userId },
+        });
+
+        if (!reservation) {
+          throw new BadRequestException(`Reservation with id ${id} not found`);
+        }
+
+        if (reservation.status === ReservationStatus.CANCELLED) {
+          throw new BadRequestException(
+            `Reservation with id ${id} already cancelled`,
+          );
+        }
+
+        await tx.reservedSeat.deleteMany({
+          where: { reservationId: id },
+        });
+
+        return await tx.reservation.update({
+          where: { id, userId },
+          data: { status: ReservationStatus.CANCELLED },
         });
       });
     } catch (error) {
-      this.handleError(error, 'create reservation');
+      this.handleError(error, `cancel reservation with id ${id}`);
     }
   }
 
@@ -236,7 +320,6 @@ export class ReservationsService {
           }
 
           this.ensureSeatsInAuditorium(seats, showtime.auditoriumId);
-
           await this.ensureSeatsNotReserved(tx, seatIds, showtimeId);
           await this.ensureAuditoriumCapacityIsNotExceeded(
             tx,

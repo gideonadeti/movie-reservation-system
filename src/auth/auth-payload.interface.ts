@@ -1,8 +1,9 @@
-import { Role } from 'generated/prisma';
+import { UserRole } from '@prisma/client';
 
 export interface AuthPayload {
-  email: string;
   sub: string;
-  role: Role;
+  name: string;
+  email: string;
+  role: UserRole;
   jti: string;
 }

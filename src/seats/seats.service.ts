@@ -8,7 +8,7 @@ import {
 import { CreateSeatDto } from './dto/create-seat.dto';
 import { UpdateSeatDto } from './dto/update-seat.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Prisma } from 'generated/prisma';
+import { Prisma } from '@prisma/client';
 import { FindAllSeatsDto } from './dto/find-all-seats.dto';
 
 @Injectable()
@@ -47,7 +47,7 @@ export class SeatsService {
     return whereConditions;
   }
 
-  async create(userId: string, createSeatDto: CreateSeatDto) {
+  async create(createSeatDto: CreateSeatDto) {
     const { auditoriumId } = createSeatDto;
 
     try {
@@ -73,7 +73,7 @@ export class SeatsService {
         }
 
         return tx.seat.create({
-          data: { ...createSeatDto, adminId: userId },
+          data: { ...createSeatDto },
         });
       });
     } catch (error) {
@@ -131,10 +131,10 @@ export class SeatsService {
     }
   }
 
-  async findReports(userId: string, id: string) {
+  async findReports(id: string) {
     try {
       const seat = await this.prismaService.seat.findUnique({
-        where: { id, adminId: userId },
+        where: { id },
         include: {
           auditorium: true,
           reservedSeats: true,
@@ -157,12 +157,11 @@ export class SeatsService {
     }
   }
 
-  async update(userId: string, id: string, updateSeatDto: UpdateSeatDto) {
+  async update(id: string, updateSeatDto: UpdateSeatDto) {
     try {
       return await this.prismaService.seat.update({
         where: {
           id,
-          adminId: userId,
         },
         data: updateSeatDto,
       });
@@ -171,12 +170,11 @@ export class SeatsService {
     }
   }
 
-  async remove(userId: string, id: string) {
+  async remove(id: string) {
     try {
       return await this.prismaService.seat.delete({
         where: {
           id,
-          adminId: userId,
         },
       });
     } catch (error) {

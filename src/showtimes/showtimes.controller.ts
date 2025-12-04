@@ -19,22 +19,25 @@ import { RolesGuard } from 'src/roles/roles.guard';
 import { Roles } from 'src/roles/roles.decorator';
 import { UserRole } from '@prisma/client';
 import { FindAllShowtimesDto } from './dto/find-all-showtimes.dto';
-import { Public } from 'src/auth/public.decorator';
 import { SeedShowtimesDto } from './dto/seed-showtimes.dto';
+import { Public } from 'src/auth/public.decorator';
 
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(RolesGuard)
 @Roles(UserRole.ADMIN)
 @Controller('showtimes')
 export class ShowtimesController {
   constructor(private readonly showtimesService: ShowtimesService) {}
 
   @Post()
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   create(@Body() createShowtimeDto: CreateShowtimeDto) {
     return this.showtimesService.create(createShowtimeDto);
   }
 
   @Post('seed')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   seed(@Body() dto: SeedShowtimesDto) {
     return this.showtimesService.seed(dto.count);
   }
@@ -52,11 +55,15 @@ export class ShowtimesController {
   }
 
   @Get(':id/reports')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   findReports(@Param('id') id: string) {
     return this.showtimesService.findReports(id);
   }
 
   @Patch(':id')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   update(
     @Param('id') id: string,
     @Body() updateShowtimeDto: UpdateShowtimeDto,
@@ -65,6 +72,8 @@ export class ShowtimesController {
   }
 
   @Delete(':id')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   remove(@Param('id') id: string) {
     return this.showtimesService.remove(id);
   }

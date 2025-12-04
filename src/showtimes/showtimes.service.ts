@@ -298,7 +298,7 @@ export class ShowtimesService {
 
     try {
       if (!page && !limit) {
-        const showtimes = await this.prismaService.showtime.findMany({
+        return await this.prismaService.showtime.findMany({
           where: whereConditions,
           orderBy: { [sortBy || 'startTime']: order || 'asc' },
           include: {
@@ -319,20 +319,8 @@ export class ShowtimesService {
                 },
               },
             },
-            _count: {
-              select: {
-                reservations: {
-                  where: { status: ReservationStatus.CONFIRMED },
-                },
-              },
-            },
           },
         });
-
-        return showtimes.map(({ _count, ...showtime }) => ({
-          ...showtime,
-          numberOfReservations: _count.reservations,
-        }));
       }
 
       const numberPage = page || 1;
@@ -364,21 +352,11 @@ export class ShowtimesService {
               },
             },
           },
-          _count: {
-            select: {
-              reservations: {
-                where: { status: ReservationStatus.CONFIRMED },
-              },
-            },
-          },
         },
       });
 
       return {
-        showtimes: showtimes.map(({ _count, ...showtime }) => ({
-          ...showtime,
-          numberOfReservations: _count.reservations,
-        })),
+        showtimes,
         metadata: {
           total,
           lastPage,

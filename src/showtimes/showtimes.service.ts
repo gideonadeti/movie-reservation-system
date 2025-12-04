@@ -313,6 +313,7 @@ export class ShowtimesService {
                 id: true,
                 showtimeId: true,
                 userId: true,
+                amountCharged: true,
                 reservedSeats: {
                   select: {
                     id: true,
@@ -348,6 +349,7 @@ export class ShowtimesService {
               id: true,
               showtimeId: true,
               userId: true,
+              amountCharged: true,
               reservedSeats: {
                 select: {
                   id: true,

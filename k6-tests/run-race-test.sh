@@ -6,7 +6,7 @@ ENV_FILE="k6-tests/.env.test.local"
 
 if [ ! -f "$ENV_FILE" ]; then
     echo "❌ Test data file not found: $ENV_FILE"
-    echo "   Please run ./k6-tests/get-data.sh first"
+    echo "   Please run ./k6-tests/get-race-test-data.sh first"
     exit 1
 fi
 

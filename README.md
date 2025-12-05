@@ -22,6 +22,7 @@ A robust RESTful API built with NestJS for managing movie reservations, showtime
     - [API Documentation](#api-documentation)
     - [Email Service](#email-service)
     - [Development Tools](#development-tools)
+    - [Testing](#testing)
   - [Running Locally](#running-locally)
     - [Prerequisites](#prerequisites)
     - [Environment Variables](#environment-variables)
@@ -110,6 +111,11 @@ For screenshots, please visit the [moviereserv repository](https://github.com/gi
 - **ESLint** - Code linting
 - **Prettier** - Code formatting
 - **Jest** - Testing framework
+
+### Testing
+
+- **k6** - Load testing and concurrency testing for race condition validation
+  - See [k6-tests/HOW-TO-RUN.md](./k6-tests/HOW-TO-RUN.md) for instructions on running concurrency tests
 
 ## Running Locally
 

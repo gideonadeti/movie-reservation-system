@@ -23,6 +23,23 @@ export class ReservationsService {
       throw error;
     }
 
+    // Handle unique constraint violation (double-booking prevention)
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2002'
+    ) {
+      // Check if it's the seat reservation constraint
+      if (
+        (error.meta as { target: string[] })?.target?.includes('seatId') &&
+        (error.meta as { target: string[] })?.target?.includes('showtimeId')
+      ) {
+        throw new BadRequestException(
+          'One or more seats are already reserved for this showtime. Please select different seats.',
+        );
+      }
+      throw new BadRequestException('A unique constraint violation occurred');
+    }
+
     throw new InternalServerErrorException(`Failed to ${action}`);
   }
 
@@ -93,7 +110,7 @@ export class ReservationsService {
     const reservedSeats = await tx.reservedSeat.findMany({
       where: {
         seatId: { in: seatIds },
-        reservation: { showtimeId },
+        showtimeId,
       },
       select: { seatId: true },
     });
@@ -115,7 +132,7 @@ export class ReservationsService {
   ) {
     const currentReservedCount = await tx.reservedSeat.count({
       where: {
-        reservation: { showtimeId },
+        showtimeId,
       },
     });
 
@@ -167,8 +184,12 @@ export class ReservationsService {
     try {
       return await this.prismaService.$transaction(
         async (tx) => {
-          const showtime = await this.validateShowtimeExists(tx, showtimeId);
-          const seats = await this.validateSeatIds(tx, seatIds);
+          // Optimize: Combine showtime validation and seat validation in parallel
+          const [showtime, seats] = await Promise.all([
+            this.validateShowtimeExists(tx, showtimeId),
+            this.validateSeatIds(tx, seatIds),
+          ]);
+
           const amountCharged = seatIds.length * showtime.price;
 
           this.validatePaymentAmount(
@@ -178,7 +199,11 @@ export class ReservationsService {
             showtime.price,
           );
           this.ensureSeatsInAuditorium(seats, showtime.auditoriumId);
-          await this.ensureSeatsNotReserved(tx, seatIds, showtimeId);
+
+          // Note: We removed ensureSeatsNotReserved check because the unique constraint
+          // @@unique([seatId, showtimeId]) will automatically prevent double-booking.
+          // The database will reject conflicting inserts, and we handle P2002 errors.
+
           await this.ensureAuditoriumCapacityIsNotExceeded(
             tx,
             showtimeId,
@@ -186,6 +211,8 @@ export class ReservationsService {
             showtime,
           );
 
+          // The unique constraint on ReservedSeat will prevent double-booking
+          // If there's a conflict, Prisma will throw P2002 error which we handle
           const reservation = await tx.reservation.create({
             data: {
               userId,
@@ -195,6 +222,7 @@ export class ReservationsService {
               reservedSeats: {
                 create: seatIds.map((seatId) => ({
                   seat: { connect: { id: seatId } },
+                  showtime: { connect: { id: showtimeId } },
                 })),
               },
             },
@@ -213,7 +241,11 @@ export class ReservationsService {
             },
           };
         },
-        { timeout: 28000 }, // 28 seconds
+        {
+          timeout: 10000, // Reduced from 28s - transactions should be fast
+          // Consider adding isolationLevel for extra safety in high-concurrency scenarios
+          // isolationLevel: Prisma.TransactionIsolationLevel.Serializable
+        },
       );
     } catch (error) {
       this.handleError(error, 'create reservation');
@@ -302,14 +334,19 @@ export class ReservationsService {
           });
 
           if (!reservation) {
-            throw new Error();
+            throw new BadRequestException(
+              `Reservation with id ${id} not found`,
+            );
           }
 
           showtimeId = showtimeId || reservation.showtimeId;
           seatIds = seatIds || reservation.reservedSeats.map((r) => r.seatId);
 
-          const showtime = await this.validateShowtimeExists(tx, showtimeId);
-          const seats = await this.validateSeatIds(tx, seatIds);
+          // Optimize: Run validations in parallel
+          const [showtime, seats] = await Promise.all([
+            this.validateShowtimeExists(tx, showtimeId),
+            this.validateSeatIds(tx, seatIds),
+          ]);
 
           if (status && status === 'CANCELLED') {
             if (showtime.startTime < new Date()) {
@@ -320,7 +357,7 @@ export class ReservationsService {
           }
 
           this.ensureSeatsInAuditorium(seats, showtime.auditoriumId);
-          await this.ensureSeatsNotReserved(tx, seatIds, showtimeId);
+          // Note: Removed ensureSeatsNotReserved - unique constraint handles this
           await this.ensureAuditoriumCapacityIsNotExceeded(
             tx,
             showtimeId,
@@ -328,10 +365,12 @@ export class ReservationsService {
             showtime,
           );
 
+          // Delete old reserved seats first
           await tx.reservedSeat.deleteMany({
             where: { reservationId: reservation.id },
           });
 
+          // Create new reserved seats (unique constraint will prevent conflicts)
           return tx.reservation.update({
             where: {
               id,
@@ -345,12 +384,13 @@ export class ReservationsService {
                   seatIds || reservation.reservedSeats.map((r) => r.seatId)
                 ).map((seatId) => ({
                   seat: { connect: { id: seatId } },
+                  showtime: { connect: { id: showtimeId } },
                 })),
               },
             },
           });
         },
-        { timeout: 10000 }, // 10 seconds
+        { timeout: 10000 },
       );
     } catch (error) {
       this.handleError(error, `update reservation with  id ${id}`);

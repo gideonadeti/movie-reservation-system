@@ -60,8 +60,9 @@ model Showtime {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  auditorium   Auditorium    @relation(fields: [auditoriumId], references: [id], onDelete: Cascade)
-  reservations Reservation[]
+  auditorium    Auditorium     @relation(fields: [auditoriumId], references: [id], onDelete: Cascade)
+  reservations  Reservation[]
+  reservedSeats ReservedSeat[]
 
   /// Main index for GET /showtimes:
   /// WHERE endTime >= now() ORDER BY startTime
@@ -124,12 +125,16 @@ model ReservedSeat {
   id            String   @id @default(uuid())
   seatId        String
   reservationId String
+  showtimeId    String
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
   seat        Seat        @relation(fields: [seatId], references: [id], onDelete: Cascade)
   reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  showtime    Showtime    @relation(fields: [showtimeId], references: [id], onDelete: Cascade)
 
+  /// Prevent double-booking: a seat can only be reserved once per showtime
+  @@unique([seatId, showtimeId])
   /// For fetching reserved seats by reservation
   @@index([reservationId])
 }

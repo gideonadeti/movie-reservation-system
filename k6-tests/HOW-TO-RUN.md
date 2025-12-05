@@ -5,7 +5,7 @@
 Before running the tests, you need to install the following tools:
 
 - **k6** (Required) - Load testing tool. See [k6 installation guide](https://grafana.com/docs/k6/latest/set-up/install-k6/)
-- **jq** (Optional but Recommended) - JSON processor. The `get-data.sh` script works without `jq`, but it's more reliable with it installed. See [jq downloads](https://jqlang.org/download/)
+- **jq** (Optional but Recommended) - JSON processor. The `get-race-test-data.sh` script works without `jq`, but it's more reliable with it installed. See [jq downloads](https://jqlang.org/download/)
 
 ---
 
@@ -22,7 +22,7 @@ Before running the tests, you need to install the following tools:
 2. **Run the helper script:**
 
    ```bash
-   ./k6-tests/get-data.sh
+   ./k6-tests/get-race-test-data.sh
    ```
 
    You'll be prompted to enter your email and password (password input will be hidden for security).
@@ -36,7 +36,7 @@ Before running the tests, you need to install the following tools:
 3. **Run the test:**
 
    ```bash
-   ./k6-tests/run-test.sh
+   ./k6-tests/run-race-test.sh
    ```
 
    This will run the k6 test using the data collected in step 2.

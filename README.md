@@ -2,7 +2,7 @@
 
 A robust RESTful API built with NestJS for managing movie reservations, showtimes, and theater operations. This backend service powers the [moviereserv](https://github.com/gideonadeti/moviereserv) frontend application—a full-featured movie ticket reservation system with authentication, role-based access control, and seamless integration with The Movie Database (TMDB) API.
 
-[Live Demo](https://moviereserv.vercel.app) | [Video Walkthrough](https://youtu.be/kkSGNebMShg)
+[Live Demo](https://moviereserv.vercel.app) | [Video Walkthrough](https://youtu.be/uXvKouVCD5s)
 
 ## Table of Contents
 
